@@ -1,6 +1,7 @@
 
 import { Navbar } from "@/components/navigation/Navbar";
 import { Hero } from "@/components/home/Hero";
+import { Songs } from "@/components/songs/Songs";
 
 const Index = () => {
   return (
@@ -8,6 +9,7 @@ const Index = () => {
       <Navbar />
       <main className="pt-16">
         <Hero />
+        <Songs />
       </main>
     </div>
   );
