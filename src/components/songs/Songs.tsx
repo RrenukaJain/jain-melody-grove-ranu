@@ -1,15 +1,26 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PlayCircle, PauseCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { MusicControl } from "./MusicControl";
+
+interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  duration: string;
+  file_url: string;
+}
 
 export const Songs = () => {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
-  const audioRef = useState<HTMLAudioElement | null>(null);
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
+  const [currentSongIndex, setCurrentSongIndex] = useState<number>(-1);
 
   const { data: songs, isLoading } = useQuery({
     queryKey: ['songs'],
@@ -20,22 +31,20 @@ export const Songs = () => {
         .order('title');
       
       if (error) throw error;
-      return data;
+      return data as Song[];
     },
   });
 
-  const handlePlayPause = (songId: string, fileUrl: string) => {
+  const handlePlayPause = (songId: string, fileUrl: string, index: number) => {
     if (currentlyPlaying === songId) {
-      // Pause current song
-      audioRef[0]?.pause();
+      audioRef?.pause();
+      setIsPlaying(false);
       setCurrentlyPlaying(null);
     } else {
-      // Stop previous audio if playing
-      if (audioRef[0]) {
-        audioRef[0].pause();
+      if (audioRef) {
+        audioRef.pause();
       }
 
-      // Play new song
       const audio = new Audio(fileUrl);
       audio.addEventListener('error', () => {
         toast({
@@ -54,34 +63,74 @@ export const Songs = () => {
         });
       });
 
-      audioRef[0] = audio;
+      setAudioRef(audio);
       setCurrentlyPlaying(songId);
+      setCurrentSongIndex(index);
+      setIsPlaying(true);
 
-      // Add ended event listener to reset playing state
       audio.addEventListener('ended', () => {
         setCurrentlyPlaying(null);
+        setIsPlaying(false);
       });
     }
   };
+
+  const handleNext = () => {
+    if (!songs || currentSongIndex === -1) return;
+    const nextIndex = (currentSongIndex + 1) % songs.length;
+    const nextSong = songs[nextIndex];
+    handlePlayPause(nextSong.id, nextSong.file_url, nextIndex);
+  };
+
+  const handlePrevious = () => {
+    if (!songs || currentSongIndex === -1) return;
+    const prevIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+    const prevSong = songs[prevIndex];
+    handlePlayPause(prevSong.id, prevSong.file_url, prevIndex);
+  };
+
+  const getCurrentSong = () => {
+    if (!songs || currentSongIndex === -1) return null;
+    return songs[currentSongIndex];
+  };
+
+  const handleControlPlayPause = () => {
+    if (isPlaying) {
+      audioRef?.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef?.play();
+      setIsPlaying(true);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (audioRef) {
+        audioRef.pause();
+        audioRef.src = "";
+      }
+    };
+  }, []);
 
   if (isLoading) {
     return <div className="flex justify-center p-8">Loading songs...</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 mb-32">
       <h2 className="text-2xl font-bold mb-6">Featured Jain Songs</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {songs?.map((song) => (
+        {songs?.map((song, index) => (
           <div
             key={song.id}
-            className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">{song.title}</h3>
-                <p className="text-gray-600">{song.artist}</p>
-                <p className="text-sm text-gray-500 mt-1">
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-2">{song.title}</h3>
+                <p className="text-gray-600 mb-2">{song.artist}</p>
+                <p className="text-sm text-gray-500">
                   Duration: {song.duration}
                 </p>
               </div>
@@ -89,7 +138,7 @@ export const Songs = () => {
                 variant="ghost"
                 size="icon"
                 className="text-primary hover:text-primary/80"
-                onClick={() => handlePlayPause(song.id, song.file_url)}
+                onClick={() => handlePlayPause(song.id, song.file_url, index)}
               >
                 {currentlyPlaying === song.id ? (
                   <PauseCircle className="h-6 w-6" />
@@ -101,6 +150,15 @@ export const Songs = () => {
           </div>
         ))}
       </div>
+
+      <MusicControl
+        currentSong={getCurrentSong()}
+        audio={audioRef}
+        onPlayPause={handleControlPlayPause}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        isPlaying={isPlaying}
+      />
     </div>
   );
 };
