@@ -40,6 +40,9 @@ export const MusicControl = ({
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isShuffleOn, setIsShuffleOn] = useState(false);
+  const [isRepeatOn, setIsRepeatOn] = useState(false);
+  const [showTimePreview, setShowTimePreview] = useState<number | null>(null);
 
   useEffect(() => {
     if (!audio) return;
@@ -93,37 +96,43 @@ export const MusicControl = ({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const handleProgressHover = (event: React.MouseEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const percent = ((event.clientX - bounds.left) / bounds.width) * 100;
+    const previewTime = (percent / 100) * duration;
+    setShowTimePreview(previewTime);
+  };
+
   if (!currentSong) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-4 z-50">
       <div className="container mx-auto">
-        <div className="flex flex-col gap-2">
-          {/* Song info */}
-          <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center justify-between">
+          {/* Left section - Song info */}
+          <div className="flex items-center space-x-4 w-1/4">
+            <div className="w-14 h-14 bg-[#282828] rounded flex items-center justify-center">
+              <div className="text-2xl text-gray-400">🎵</div>
+            </div>
             <div>
               <h3 className="font-semibold text-sm text-white">{currentSong.title}</h3>
               <p className="text-xs text-gray-400">{currentSong.artist}</p>
             </div>
-            <div className="text-xs text-gray-400">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="w-full">
-            <Slider
-              value={[progress]}
-              onValueChange={handleSeek}
-              max={100}
-              step={0.1}
-              className="w-full"
-            />
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          {/* Center section - Player controls */}
+          <div className="flex flex-col items-center w-2/4">
+            <div className="flex items-center gap-4 mb-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsShuffleOn(!isShuffleOn)}
+                className={`text-gray-400 hover:text-white ${
+                  isShuffleOn ? "text-[#1DB954]" : ""
+                }`}
+              >
+                <Shuffle className="h-4 w-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -136,12 +145,12 @@ export const MusicControl = ({
                 variant="ghost"
                 size="icon"
                 onClick={onPlayPause}
-                className="text-gray-400 hover:text-white"
+                className="w-12 h-12 bg-white rounded-full hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-gray-100"
               >
                 {isPlaying ? (
-                  <Pause className="h-5 w-5" />
+                  <Pause className="h-6 w-6" />
                 ) : (
-                  <Play className="h-5 w-5" />
+                  <Play className="h-6 w-6" />
                 )}
               </Button>
               <Button
@@ -152,29 +161,72 @@ export const MusicControl = ({
               >
                 <SkipForward className="h-5 w-5" />
               </Button>
-            </div>
-
-            {/* Volume control */}
-            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleMute}
-                className="text-gray-400 hover:text-white"
+                onClick={() => setIsRepeatOn(!isRepeatOn)}
+                className={`text-gray-400 hover:text-white ${
+                  isRepeatOn ? "text-[#1DB954]" : ""
+                }`}
               >
-                {isMuted ? (
-                  <VolumeX className="h-5 w-5" />
-                ) : (
-                  <Volume2 className="h-5 w-5" />
-                )}
+                <Repeat className="h-4 w-4" />
               </Button>
-              <Slider
-                value={[isMuted ? 0 : volume]}
-                onValueChange={handleVolumeChange}
-                max={100}
-                className="w-24"
-              />
             </div>
+
+            {/* Progress bar */}
+            <div className="w-full flex items-center gap-2">
+              <span className="text-xs text-gray-400 w-12 text-right">
+                {formatTime(currentTime)}
+              </span>
+              <div
+                className="relative flex-1"
+                onMouseMove={handleProgressHover}
+                onMouseLeave={() => setShowTimePreview(null)}
+              >
+                <Slider
+                  value={[progress]}
+                  onValueChange={handleSeek}
+                  max={100}
+                  step={0.1}
+                  className="w-full"
+                />
+                {showTimePreview !== null && (
+                  <div
+                    className="absolute -top-8 px-2 py-1 rounded bg-[#282828] text-white text-xs transform -translate-x-1/2"
+                    style={{
+                      left: `${(showTimePreview / duration) * 100}%`,
+                    }}
+                  >
+                    {formatTime(showTimePreview)}
+                  </div>
+                )}
+              </div>
+              <span className="text-xs text-gray-400 w-12">
+                {formatTime(duration)}
+              </span>
+            </div>
+          </div>
+
+          {/* Right section - Volume control */}
+          <div className="flex items-center justify-end gap-2 w-1/4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMute}
+              className="text-gray-400 hover:text-white"
+            >
+              {isMuted ? (
+                <VolumeX className="h-5 w-5" />
+              ) : (
+                <Volume2 className="h-5 w-5" />
+              )}
+            </Button>
+            <Slider
+              value={[isMuted ? 0 : volume]}
+              onValueChange={handleVolumeChange}
+              max={100}
+              className="w-24"
+            />
           </div>
         </div>
       </div>
