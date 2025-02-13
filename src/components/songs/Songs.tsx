@@ -114,22 +114,22 @@ export const Songs = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="flex justify-center p-8">Loading songs...</div>;
+    return <div className="flex justify-center p-8 text-white">Loading songs...</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8 mb-32">
-      <h2 className="text-2xl font-bold mb-6">Featured Jain Songs</h2>
+      <h2 className="text-2xl font-bold mb-6 text-white">Featured Jain Songs</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {songs?.map((song, index) => (
           <div
             key={song.id}
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            className="bg-[#181818] rounded-lg p-6 hover:bg-[#282828] transition-colors"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="font-semibold text-lg mb-2">{song.title}</h3>
-                <p className="text-gray-600 mb-2">{song.artist}</p>
+                <h3 className="font-semibold text-lg mb-2 text-white">{song.title}</h3>
+                <p className="text-gray-400 mb-2">{song.artist}</p>
                 <p className="text-sm text-gray-500">
                   Duration: {song.duration}
                 </p>
@@ -137,7 +137,7 @@ export const Songs = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-primary hover:text-primary/80"
+                className="text-[#1DB954] hover:text-[#1ed760]"
                 onClick={() => handlePlayPause(song.id, song.file_url, index)}
               >
                 {currentlyPlaying === song.id ? (

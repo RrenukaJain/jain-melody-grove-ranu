@@ -96,16 +96,16 @@ export const MusicControl = ({
   if (!currentSong) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-4 z-50">
       <div className="container mx-auto">
         <div className="flex flex-col gap-2">
           {/* Song info */}
           <div className="flex justify-between items-center mb-2">
             <div>
-              <h3 className="font-semibold text-sm">{currentSong.title}</h3>
-              <p className="text-xs text-gray-500">{currentSong.artist}</p>
+              <h3 className="font-semibold text-sm text-white">{currentSong.title}</h3>
+              <p className="text-xs text-gray-400">{currentSong.artist}</p>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-400">
               {formatTime(currentTime)} / {formatTime(duration)}
             </div>
           </div>
@@ -128,7 +128,7 @@ export const MusicControl = ({
                 variant="ghost"
                 size="icon"
                 onClick={onPrevious}
-                className="text-gray-600 hover:text-primary"
+                className="text-gray-400 hover:text-white"
               >
                 <SkipBack className="h-5 w-5" />
               </Button>
@@ -136,7 +136,7 @@ export const MusicControl = ({
                 variant="ghost"
                 size="icon"
                 onClick={onPlayPause}
-                className="text-gray-600 hover:text-primary"
+                className="text-gray-400 hover:text-white"
               >
                 {isPlaying ? (
                   <Pause className="h-5 w-5" />
@@ -148,7 +148,7 @@ export const MusicControl = ({
                 variant="ghost"
                 size="icon"
                 onClick={onNext}
-                className="text-gray-600 hover:text-primary"
+                className="text-gray-400 hover:text-white"
               >
                 <SkipForward className="h-5 w-5" />
               </Button>
@@ -160,7 +160,7 @@ export const MusicControl = ({
                 variant="ghost"
                 size="icon"
                 onClick={toggleMute}
-                className="text-gray-600 hover:text-primary"
+                className="text-gray-400 hover:text-white"
               >
                 {isMuted ? (
                   <VolumeX className="h-5 w-5" />

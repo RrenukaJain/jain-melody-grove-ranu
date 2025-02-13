@@ -11,7 +11,7 @@ export type Database = {
     Tables: {
       songs: {
         Row: {
-          artist: string
+          artist: string | null
           cover_image: string | null
           created_at: string
           duration: string
@@ -20,7 +20,7 @@ export type Database = {
           title: string
         }
         Insert: {
-          artist: string
+          artist?: string | null
           cover_image?: string | null
           created_at?: string
           duration: string
@@ -29,7 +29,7 @@ export type Database = {
           title: string
         }
         Update: {
-          artist?: string
+          artist?: string | null
           cover_image?: string | null
           created_at?: string
           duration?: string
