@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, PauseCircle } from "lucide-react";
+import { PlayCircle, PauseCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { MusicControl } from "./MusicControl";
 
@@ -18,9 +18,11 @@ interface Song {
 export const Songs = () => {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoadingSong, setIsLoadingSong] = useState(false);
   const { toast } = useToast();
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
   const [currentSongIndex, setCurrentSongIndex] = useState<number>(-1);
+  const loadingTimeout = useRef<NodeJS.Timeout>();
 
   const { data: songs, isLoading } = useQuery({
     queryKey: ['songs'],
@@ -35,18 +37,70 @@ export const Songs = () => {
     },
   });
 
-  const handlePlayPause = (songId: string, fileUrl: string, index: number) => {
+  const preloadAudio = async (fileUrl: string): Promise<HTMLAudioElement> => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio();
+      
+      audio.addEventListener('canplaythrough', () => {
+        resolve(audio);
+      }, { once: true });
+
+      audio.addEventListener('error', () => {
+        reject(new Error("Failed to load audio"));
+      }, { once: true });
+
+      audio.preload = "auto";
+      audio.src = fileUrl;
+      audio.load();
+    });
+  };
+
+  const handlePlayPause = async (songId: string, fileUrl: string, index: number) => {
+    // If clicking the same song that's currently playing
     if (currentlyPlaying === songId) {
       audioRef?.pause();
       setIsPlaying(false);
       setCurrentlyPlaying(null);
-    } else {
-      if (audioRef) {
-        audioRef.pause();
+      return;
+    }
+
+    // Stop current audio if any
+    if (audioRef) {
+      audioRef.pause();
+      audioRef.src = "";
+    }
+
+    // Show loading state
+    setIsLoadingSong(true);
+    // Clear any existing timeout
+    if (loadingTimeout.current) {
+      clearTimeout(loadingTimeout.current);
+    }
+    // Set a timeout to show error if loading takes too long
+    loadingTimeout.current = setTimeout(() => {
+      setIsLoadingSong(false);
+      toast({
+        variant: "destructive",
+        title: "Loading timeout",
+        description: "The song is taking too long to load. Please try again.",
+      });
+    }, 10000); // 10 second timeout
+
+    try {
+      const audio = await preloadAudio(fileUrl);
+      
+      // Clear the timeout since loading succeeded
+      if (loadingTimeout.current) {
+        clearTimeout(loadingTimeout.current);
       }
 
-      const audio = new Audio(fileUrl);
+      audio.addEventListener('ended', () => {
+        setCurrentlyPlaying(null);
+        setIsPlaying(false);
+      });
+
       audio.addEventListener('error', () => {
+        setIsLoadingSong(false);
         toast({
           variant: "destructive",
           title: "Error playing song",
@@ -54,39 +108,39 @@ export const Songs = () => {
         });
       });
 
-      audio.play().catch((error) => {
-        console.error('Error playing audio:', error);
-        toast({
-          variant: "destructive",
-          title: "Playback error",
-          description: "Unable to play this song. The file might be unavailable.",
-        });
-      });
-
       setAudioRef(audio);
       setCurrentlyPlaying(songId);
       setCurrentSongIndex(index);
       setIsPlaying(true);
+      setIsLoadingSong(false);
 
-      audio.addEventListener('ended', () => {
-        setCurrentlyPlaying(null);
-        setIsPlaying(false);
+      await audio.play();
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsLoadingSong(false);
+      if (loadingTimeout.current) {
+        clearTimeout(loadingTimeout.current);
+      }
+      toast({
+        variant: "destructive",
+        title: "Playback error",
+        description: "Unable to play this song. The file might be unavailable.",
       });
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!songs || currentSongIndex === -1) return;
     const nextIndex = (currentSongIndex + 1) % songs.length;
     const nextSong = songs[nextIndex];
-    handlePlayPause(nextSong.id, nextSong.file_url, nextIndex);
+    await handlePlayPause(nextSong.id, nextSong.file_url, nextIndex);
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = async () => {
     if (!songs || currentSongIndex === -1) return;
     const prevIndex = (currentSongIndex - 1 + songs.length) % songs.length;
     const prevSong = songs[prevIndex];
-    handlePlayPause(prevSong.id, prevSong.file_url, prevIndex);
+    await handlePlayPause(prevSong.id, prevSong.file_url, prevIndex);
   };
 
   const getCurrentSong = () => {
@@ -109,6 +163,9 @@ export const Songs = () => {
       if (audioRef) {
         audioRef.pause();
         audioRef.src = "";
+      }
+      if (loadingTimeout.current) {
+        clearTimeout(loadingTimeout.current);
       }
     };
   }, []);
@@ -137,10 +194,13 @@ export const Songs = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-[#1DB954] hover:text-[#1ed760]"
+                className="text-[#1DB954] hover:text-[#1ed760] relative"
                 onClick={() => handlePlayPause(song.id, song.file_url, index)}
+                disabled={isLoadingSong}
               >
-                {currentlyPlaying === song.id ? (
+                {isLoadingSong && currentlyPlaying === song.id ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : currentlyPlaying === song.id ? (
                   <PauseCircle className="h-6 w-6" />
                 ) : (
                   <PlayCircle className="h-6 w-6" />
