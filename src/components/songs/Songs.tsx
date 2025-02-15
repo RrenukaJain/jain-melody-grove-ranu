@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,7 +47,6 @@ export const Songs = () => {
     },
   });
 
-  // Cache management functions
   const cleanupCache = () => {
     const entries = Object.entries(audioCache.current);
     if (entries.length > CACHE_SIZE_LIMIT) {
@@ -63,13 +61,11 @@ export const Songs = () => {
   };
 
   const preloadAudio = async (fileUrl: string, songId: string): Promise<HTMLAudioElement> => {
-    // Check if already in cache
     if (audioCache.current[songId]) {
       audioCache.current[songId].lastUsed = Date.now();
       return audioCache.current[songId].audio;
     }
 
-    // If already being preloaded, wait for it
     if (preloadQueue.current.has(songId)) {
       return new Promise((resolve, reject) => {
         const checkCache = setInterval(() => {
@@ -79,7 +75,6 @@ export const Songs = () => {
           }
         }, 100);
 
-        // Timeout after 10 seconds
         setTimeout(() => {
           clearInterval(checkCache);
           reject(new Error("Preload timeout"));
@@ -94,7 +89,10 @@ export const Songs = () => {
       
       const loadPromise = new Promise<HTMLAudioElement>((resolve, reject) => {
         audio.addEventListener('canplaythrough', () => resolve(audio), { once: true });
-        audio.addEventListener('error', reject, { once: true });
+        audio.addEventListener('error', (e) => {
+          console.error('Audio loading error:', e);
+          reject(new Error("Failed to load audio"));
+        }, { once: true });
       });
 
       audio.preload = "auto";
@@ -103,7 +101,6 @@ export const Songs = () => {
 
       const loadedAudio = await loadPromise;
       
-      // Add to cache
       audioCache.current[songId] = {
         audio: loadedAudio,
         lastUsed: Date.now()
@@ -116,22 +113,17 @@ export const Songs = () => {
     }
   };
 
-  // Preload next and previous songs
   const preloadAdjacentSongs = async () => {
     if (!songs || currentSongIndex === -1) return;
 
     const nextIndex = (currentSongIndex + 1) % songs.length;
     const prevIndex = (currentSongIndex - 1 + songs.length) % songs.length;
 
-    // Preload next song
     preloadAudio(songs[nextIndex].file_url, songs[nextIndex].id).catch(() => {
-      // Silently fail for preloading
       console.log("Failed to preload next song");
     });
 
-    // Preload previous song
     preloadAudio(songs[prevIndex].file_url, songs[prevIndex].id).catch(() => {
-      // Silently fail for preloading
       console.log("Failed to preload previous song");
     });
   };
@@ -143,7 +135,6 @@ export const Songs = () => {
   }, [currentSongIndex, songs]);
 
   const handlePlayPause = async (songId: string, fileUrl: string, index: number) => {
-    // If clicking the same song that's currently playing
     if (currentlyPlaying === songId) {
       audioRef?.pause();
       setIsPlaying(false);
@@ -151,19 +142,20 @@ export const Songs = () => {
       return;
     }
 
-    // Stop current audio if any
     if (audioRef) {
       audioRef.pause();
       audioRef.src = "";
     }
 
     setIsLoadingSong(true);
+    setCurrentlyPlaying(songId);
     if (loadingTimeout.current) {
       clearTimeout(loadingTimeout.current);
     }
 
     loadingTimeout.current = setTimeout(() => {
       setIsLoadingSong(false);
+      setCurrentlyPlaying(null);
       toast({
         variant: "destructive",
         title: "Loading timeout",
@@ -183,32 +175,32 @@ export const Songs = () => {
         setIsPlaying(false);
       });
 
-      audio.addEventListener('error', () => {
-        setIsLoadingSong(false);
-        toast({
-          variant: "destructive",
-          title: "Error playing song",
-          description: "There was an error playing this song. Please try again later.",
-        });
-      });
-
       setAudioRef(audio);
-      setCurrentlyPlaying(songId);
       setCurrentSongIndex(index);
       setIsPlaying(true);
       setIsLoadingSong(false);
 
-      await audio.play();
+      await audio.play().catch((error) => {
+        console.error('Playback error:', error);
+        setIsLoadingSong(false);
+        setCurrentlyPlaying(null);
+        toast({
+          variant: "destructive",
+          title: "Playback error",
+          description: "Unable to play this song. Please try again.",
+        });
+      });
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('Error loading audio:', error);
       setIsLoadingSong(false);
+      setCurrentlyPlaying(null);
       if (loadingTimeout.current) {
         clearTimeout(loadingTimeout.current);
       }
       toast({
         variant: "destructive",
-        title: "Playback error",
-        description: "Unable to play this song. The file might be unavailable.",
+        title: "Loading error",
+        description: "Unable to load this song. Please try again.",
       });
     }
   };
@@ -244,7 +236,6 @@ export const Songs = () => {
 
   useEffect(() => {
     return () => {
-      // Cleanup all cached audio elements
       Object.values(audioCache.current).forEach(({ audio }) => {
         audio.src = '';
       });
@@ -280,10 +271,13 @@ export const Songs = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-[#1DB954] hover:text-[#1ed760]"
+                className="text-[#1DB954] hover:text-[#1ed760] relative"
                 onClick={() => handlePlayPause(song.id, song.file_url, index)}
+                disabled={isLoadingSong && currentlyPlaying !== song.id}
               >
-                {currentlyPlaying === song.id ? (
+                {isLoadingSong && currentlyPlaying === song.id ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : currentlyPlaying === song.id ? (
                   <PauseCircle className="h-6 w-6" />
                 ) : (
                   <PlayCircle className="h-6 w-6" />
