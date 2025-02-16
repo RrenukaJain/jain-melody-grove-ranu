@@ -25,6 +25,10 @@ interface MusicControlProps {
   onNext: () => void;
   onPrevious: () => void;
   isPlaying: boolean;
+  onToggleShuffle: () => void;
+  onToggleRepeat: () => void;
+  isShuffleOn: boolean;
+  isRepeatOn: boolean;
 }
 
 export const MusicControl = ({
@@ -34,14 +38,16 @@ export const MusicControl = ({
   onNext,
   onPrevious,
   isPlaying,
+  onToggleShuffle,
+  onToggleRepeat,
+  isShuffleOn,
+  isRepeatOn,
 }: MusicControlProps) => {
   const [volume, setVolume] = useState(100);
   const [progress, setProgress] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [isShuffleOn, setIsShuffleOn] = useState(false);
-  const [isRepeatOn, setIsRepeatOn] = useState(false);
   const [showTimePreview, setShowTimePreview] = useState<number | null>(null);
 
   useEffect(() => {
@@ -126,8 +132,8 @@ export const MusicControl = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsShuffleOn(!isShuffleOn)}
-                className={`text-gray-400 hover:text-white ${
+                onClick={onToggleShuffle}
+                className={`text-gray-400 hover:text-white transition-colors ${
                   isShuffleOn ? "text-[#1DB954]" : ""
                 }`}
               >
@@ -137,15 +143,14 @@ export const MusicControl = ({
                 variant="ghost"
                 size="icon"
                 onClick={onPrevious}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white transition-colors"
               >
                 <SkipBack className="h-5 w-5" />
               </Button>
               <Button
-                variant="ghost"
                 size="icon"
                 onClick={onPlayPause}
-                className="w-12 h-12 bg-white rounded-full hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-gray-100"
+                className="w-12 h-12 bg-white rounded-full hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-white"
               >
                 {isPlaying ? (
                   <Pause className="h-6 w-6" />
@@ -157,15 +162,15 @@ export const MusicControl = ({
                 variant="ghost"
                 size="icon"
                 onClick={onNext}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white transition-colors"
               >
                 <SkipForward className="h-5 w-5" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsRepeatOn(!isRepeatOn)}
-                className={`text-gray-400 hover:text-white ${
+                onClick={onToggleRepeat}
+                className={`text-gray-400 hover:text-white transition-colors ${
                   isRepeatOn ? "text-[#1DB954]" : ""
                 }`}
               >
@@ -213,7 +218,7 @@ export const MusicControl = ({
               variant="ghost"
               size="icon"
               onClick={toggleMute}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white transition-colors"
             >
               {isMuted ? (
                 <VolumeX className="h-5 w-5" />

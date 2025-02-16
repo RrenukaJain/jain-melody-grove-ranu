@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SongCard } from "./SongCard";
@@ -19,6 +19,10 @@ export const Songs = () => {
     preloadAdjacentSongs,
   } = useAudioPlayer();
 
+  const [isShuffleOn, setIsShuffleOn] = useState(false);
+  const [isRepeatOn, setIsRepeatOn] = useState(false);
+  const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
+
   const { data: songs, isLoading } = useQuery({
     queryKey: ['songs'],
     queryFn: async () => {
@@ -32,25 +36,90 @@ export const Songs = () => {
     },
   });
 
+  // Initialize shuffled indices when songs are loaded
+  useEffect(() => {
+    if (songs) {
+      setShuffledIndices(Array.from({ length: songs.length }, (_, i) => i));
+    }
+  }, [songs]);
+
+  // Shuffle array using Fisher-Yates algorithm
+  const shuffleArray = useCallback((array: number[]) => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  }, []);
+
+  const handleToggleShuffle = useCallback(() => {
+    setIsShuffleOn(prev => {
+      if (!prev && songs) {
+        // Turn shuffle on: create new shuffled array
+        setShuffledIndices(shuffleArray(Array.from({ length: songs.length }, (_, i) => i)));
+      }
+      return !prev;
+    });
+  }, [songs, shuffleArray]);
+
+  const handleToggleRepeat = useCallback(() => {
+    setIsRepeatOn(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    if (!audioRef) return;
+
+    const handleEnded = () => {
+      if (isRepeatOn) {
+        audioRef.currentTime = 0;
+        audioRef.play();
+      } else {
+        handleNext();
+      }
+    };
+
+    audioRef.addEventListener('ended', handleEnded);
+    return () => audioRef.removeEventListener('ended', handleEnded);
+  }, [audioRef, isRepeatOn]);
+
   useEffect(() => {
     if (songs && currentSongIndex !== -1) {
       preloadAdjacentSongs(songs, currentSongIndex);
     }
   }, [currentSongIndex, songs, preloadAdjacentSongs]);
 
-  const handleNext = () => {
+  const getNextIndex = useCallback(() => {
+    if (!songs) return -1;
+    if (isShuffleOn) {
+      const currentShuffleIndex = shuffledIndices.indexOf(currentSongIndex);
+      return shuffledIndices[(currentShuffleIndex + 1) % songs.length];
+    }
+    return (currentSongIndex + 1) % songs.length;
+  }, [songs, currentSongIndex, isShuffleOn, shuffledIndices]);
+
+  const getPreviousIndex = useCallback(() => {
+    if (!songs) return -1;
+    if (isShuffleOn) {
+      const currentShuffleIndex = shuffledIndices.indexOf(currentSongIndex);
+      return shuffledIndices[(currentShuffleIndex - 1 + songs.length) % songs.length];
+    }
+    return (currentSongIndex - 1 + songs.length) % songs.length;
+  }, [songs, currentSongIndex, isShuffleOn, shuffledIndices]);
+
+  const handleNext = useCallback(() => {
     if (!songs || currentSongIndex === -1) return;
-    const nextIndex = (currentSongIndex + 1) % songs.length;
+    const nextIndex = getNextIndex();
     const nextSong = songs[nextIndex];
     handlePlayPause(nextSong.id, nextSong.file_url, nextIndex);
-  };
+  }, [songs, currentSongIndex, getNextIndex, handlePlayPause]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (!songs || currentSongIndex === -1) return;
-    const prevIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+    const prevIndex = getPreviousIndex();
     const prevSong = songs[prevIndex];
     handlePlayPause(prevSong.id, prevSong.file_url, prevIndex);
-  };
+  }, [songs, currentSongIndex, getPreviousIndex, handlePlayPause]);
 
   const getCurrentSong = () => {
     if (!songs || currentSongIndex === -1) return null;
@@ -95,6 +164,10 @@ export const Songs = () => {
         onNext={handleNext}
         onPrevious={handlePrevious}
         isPlaying={isPlaying}
+        onToggleShuffle={handleToggleShuffle}
+        onToggleRepeat={handleToggleRepeat}
+        isShuffleOn={isShuffleOn}
+        isRepeatOn={isRepeatOn}
       />
     </div>
   );
