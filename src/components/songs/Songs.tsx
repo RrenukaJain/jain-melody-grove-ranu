@@ -34,9 +34,9 @@ export const Songs = () => {
 
   useEffect(() => {
     if (songs && currentSongIndex !== -1) {
-      preloadAdjacentSongs(songs);
+      preloadAdjacentSongs(songs, currentSongIndex);
     }
-  }, [currentSongIndex, songs]);
+  }, [currentSongIndex, songs, preloadAdjacentSongs]);
 
   const handleNext = () => {
     if (!songs || currentSongIndex === -1) return;
