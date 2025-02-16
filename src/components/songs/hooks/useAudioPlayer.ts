@@ -16,16 +16,26 @@ export const useAudioPlayer = () => {
   const preloadQueue = useRef<Set<string>>(new Set());
   const { toast } = useToast();
 
+  const cleanupAudio = (audio: HTMLAudioElement) => {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = '';
+    return new Promise<void>((resolve) => {
+      // Wait for the audio element to be properly reset
+      setTimeout(() => {
+        resolve();
+      }, 100);
+    });
+  };
+
   const cleanupCache = () => {
     const entries = Object.entries(audioCache.current);
     if (entries.length > CACHE_SIZE_LIMIT) {
       const sortedEntries = entries.sort((a, b) => a[1].lastUsed - b[1].lastUsed);
       const entriesToRemove = sortedEntries.slice(0, entries.length - CACHE_SIZE_LIMIT);
       
-      entriesToRemove.forEach(([id, { audio }]) => {
-        audio.pause();
-        audio.removeAttribute('src');
-        audio.load();
+      entriesToRemove.forEach(async ([id, { audio }]) => {
+        await cleanupAudio(audio);
         delete audioCache.current[id];
       });
     }
@@ -35,13 +45,27 @@ export const useAudioPlayer = () => {
     if (audioCache.current[songId]) {
       audioCache.current[songId].lastUsed = Date.now();
       const cachedAudio = audioCache.current[songId].audio;
+      await cleanupAudio(cachedAudio);
       
-      // Reset audio to beginning if it was previously played
-      if (cachedAudio.currentTime > 0) {
-        cachedAudio.currentTime = 0;
-      }
-      
-      return cachedAudio;
+      return new Promise((resolve, reject) => {
+        cachedAudio.src = fileUrl;
+        
+        const onCanPlay = () => {
+          cachedAudio.removeEventListener('canplaythrough', onCanPlay);
+          cachedAudio.removeEventListener('error', onError);
+          resolve(cachedAudio);
+        };
+        
+        const onError = (e: Event) => {
+          cachedAudio.removeEventListener('canplaythrough', onCanPlay);
+          cachedAudio.removeEventListener('error', onError);
+          reject(new Error("Failed to load audio"));
+        };
+        
+        cachedAudio.addEventListener('canplaythrough', onCanPlay);
+        cachedAudio.addEventListener('error', onError);
+        cachedAudio.load();
+      });
     }
 
     if (preloadQueue.current.has(songId)) {
@@ -66,11 +90,20 @@ export const useAudioPlayer = () => {
       const audio = new Audio();
       
       const loadPromise = new Promise<HTMLAudioElement>((resolve, reject) => {
-        audio.addEventListener('canplaythrough', () => resolve(audio), { once: true });
-        audio.addEventListener('error', (e) => {
-          console.error('Audio loading error:', e);
+        const onCanPlay = () => {
+          audio.removeEventListener('canplaythrough', onCanPlay);
+          audio.removeEventListener('error', onError);
+          resolve(audio);
+        };
+        
+        const onError = (e: Event) => {
+          audio.removeEventListener('canplaythrough', onCanPlay);
+          audio.removeEventListener('error', onError);
           reject(new Error("Failed to load audio"));
-        }, { once: true });
+        };
+        
+        audio.addEventListener('canplaythrough', onCanPlay);
+        audio.addEventListener('error', onError);
       });
 
       audio.preload = "auto";
@@ -97,7 +130,6 @@ export const useAudioPlayer = () => {
     const nextIndex = (currentSongIndex + 1) % songs.length;
     const prevIndex = (currentSongIndex - 1 + songs.length) % songs.length;
 
-    // Preload next and previous songs silently
     preloadAudio(songs[nextIndex].file_url, songs[nextIndex].id).catch(() => {
       console.log("Failed to preload next song");
     });
@@ -117,11 +149,9 @@ export const useAudioPlayer = () => {
       return;
     }
 
-    // Properly cleanup current audio before switching
+    // Cleanup current audio before switching
     if (audioRef) {
-      audioRef.pause();
-      audioRef.removeAttribute('src');
-      audioRef.load();
+      await cleanupAudio(audioRef);
     }
 
     setIsLoadingSong(true);
@@ -148,13 +178,12 @@ export const useAudioPlayer = () => {
         clearTimeout(loadingTimeout.current);
       }
 
-      // Clear any existing event listeners
-      audio.removeEventListener('ended', () => {});
-      
-      audio.addEventListener('ended', () => {
+      const onEnded = () => {
         setCurrentlyPlaying(null);
         setIsPlaying(false);
-      });
+      };
+
+      audio.addEventListener('ended', onEnded);
 
       setAudioRef(audio);
       setCurrentSongIndex(index);
@@ -165,14 +194,10 @@ export const useAudioPlayer = () => {
         await audio.play();
       } catch (error) {
         console.error('Playback error:', error);
+        await cleanupAudio(audio);
         setIsLoadingSong(false);
         setCurrentlyPlaying(null);
         setIsPlaying(false);
-        
-        // Properly cleanup failed audio
-        audio.pause();
-        audio.removeAttribute('src');
-        audio.load();
         
         toast({
           variant: "destructive",
@@ -200,11 +225,8 @@ export const useAudioPlayer = () => {
 
   useEffect(() => {
     return () => {
-      // Proper cleanup of all audio resources
-      Object.values(audioCache.current).forEach(({ audio }) => {
-        audio.pause();
-        audio.removeAttribute('src');
-        audio.load();
+      Object.values(audioCache.current).forEach(async ({ audio }) => {
+        await cleanupAudio(audio);
       });
       audioCache.current = {};
       
