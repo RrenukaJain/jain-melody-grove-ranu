@@ -61,14 +61,13 @@ export const useAudioPreloader = () => {
 
     try {
       const audio = new Audio();
-      await createAudioLoadPromise(audio);
-      
       audio.preload = "auto";
       audio.src = fileUrl;
-      audio.load();
       
-      setCachedAudio(songId, audio);
-      return audio;
+      const loadedAudio = await createAudioLoadPromise(audio);
+      
+      setCachedAudio(songId, loadedAudio);
+      return loadedAudio;
     } finally {
       removeFromPreloadQueue(songId);
     }
