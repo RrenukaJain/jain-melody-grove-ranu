@@ -5,8 +5,7 @@ export interface Song {
   artist: string;
   duration: string;
   file_url: string;
-  image_url?: string;
-  album?: string;
+  cover_image: string | null;
 }
 
 export interface AudioCache {
