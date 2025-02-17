@@ -49,27 +49,39 @@ export const MusicControl = ({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [showTimePreview, setShowTimePreview] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (!audio) return;
 
     const updateProgress = () => {
-      setCurrentTime(audio.currentTime);
-      setProgress((audio.currentTime / audio.duration) * 100);
+      if (!isDragging) {
+        setCurrentTime(audio.currentTime);
+        setProgress((audio.currentTime / audio.duration) * 100);
+      }
     };
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration);
+      setCurrentTime(audio.currentTime);
     };
+
+    // Update duration immediately if audio is already loaded
+    if (audio.readyState >= 1) {
+      setDuration(audio.duration);
+      setCurrentTime(audio.currentTime);
+    }
 
     audio.addEventListener("timeupdate", updateProgress);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("durationchange", () => setDuration(audio.duration));
 
     return () => {
       audio.removeEventListener("timeupdate", updateProgress);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("durationchange", () => setDuration(audio.duration));
     };
-  }, [audio]);
+  }, [audio, isDragging]);
 
   const handleVolumeChange = (value: number[]) => {
     if (!audio) return;
@@ -80,9 +92,17 @@ export const MusicControl = ({
 
   const handleSeek = (value: number[]) => {
     if (!audio) return;
+    setIsDragging(true);
     const time = (value[0] / 100) * duration;
-    audio.currentTime = time;
     setProgress(value[0]);
+    setCurrentTime(time);
+  };
+
+  const handleSeekCommit = () => {
+    if (!audio) return;
+    const time = (progress / 100) * duration;
+    audio.currentTime = time;
+    setIsDragging(false);
   };
 
   const toggleMute = () => {
@@ -97,6 +117,7 @@ export const MusicControl = ({
   };
 
   const formatTime = (time: number) => {
+    if (!isFinite(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
@@ -191,6 +212,7 @@ export const MusicControl = ({
                 <Slider
                   value={[progress]}
                   onValueChange={handleSeek}
+                  onValueCommit={handleSeekCommit}
                   max={100}
                   step={0.1}
                   className="w-full"
