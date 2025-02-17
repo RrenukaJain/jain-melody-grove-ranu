@@ -51,6 +51,14 @@ export const MusicControl = ({
   const [showTimePreview, setShowTimePreview] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Reset states when audio source changes
+  useEffect(() => {
+    if (!audio) return;
+    setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+  }, [currentSong?.id]);
+
   useEffect(() => {
     if (!audio) return;
 
@@ -66,6 +74,10 @@ export const MusicControl = ({
       setCurrentTime(audio.currentTime);
     };
 
+    const handleDurationChange = () => {
+      setDuration(audio.duration);
+    };
+
     // Update duration immediately if audio is already loaded
     if (audio.readyState >= 1) {
       setDuration(audio.duration);
@@ -74,12 +86,12 @@ export const MusicControl = ({
 
     audio.addEventListener("timeupdate", updateProgress);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
-    audio.addEventListener("durationchange", () => setDuration(audio.duration));
+    audio.addEventListener("durationchange", handleDurationChange);
 
     return () => {
       audio.removeEventListener("timeupdate", updateProgress);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      audio.removeEventListener("durationchange", () => setDuration(audio.duration));
+      audio.removeEventListener("durationchange", handleDurationChange);
     };
   }, [audio, isDragging]);
 
