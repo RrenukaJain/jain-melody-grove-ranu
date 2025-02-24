@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SongCard } from "./SongCard";
-import { SearchAndFilter } from "./SearchAndFilter";
 import { MusicControl } from "./MusicControl";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { Song } from "./types";
@@ -23,10 +22,6 @@ export const Songs = () => {
   const [isShuffleOn, setIsShuffleOn] = useState(false);
   const [isRepeatOn, setIsRepeatOn] = useState(false);
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [sortBy, setSortBy] = useState<"title" | "duration" | "popularity">("title");
-  const [selectedCategory, setSelectedCategory] = useState("All");
 
   const { data: songs, isLoading } = useQuery({
     queryKey: ['songs'],
@@ -41,12 +36,14 @@ export const Songs = () => {
     },
   });
 
+  // Initialize shuffled indices when songs are loaded
   useEffect(() => {
     if (songs) {
       setShuffledIndices(Array.from({ length: songs.length }, (_, i) => i));
     }
   }, [songs]);
 
+  // Shuffle array using Fisher-Yates algorithm
   const shuffleArray = useCallback((array: number[]) => {
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
@@ -59,6 +56,7 @@ export const Songs = () => {
   const handleToggleShuffle = useCallback(() => {
     setIsShuffleOn(prev => {
       if (!prev && songs) {
+        // Turn shuffle on: create new shuffled array
         setShuffledIndices(shuffleArray(Array.from({ length: songs.length }, (_, i) => i)));
       }
       return !prev;
@@ -68,14 +66,6 @@ export const Songs = () => {
   const handleToggleRepeat = useCallback(() => {
     setIsRepeatOn(prev => !prev);
   }, []);
-
-  const handleSortChange = (newSortBy: "title" | "duration" | "popularity") => {
-    setSortBy(newSortBy);
-  };
-
-  const handleSortOrderChange = () => {
-    setSortOrder(current => current === "asc" ? "desc" : "asc");
-  };
 
   useEffect(() => {
     if (!audioRef) return;
@@ -146,37 +136,6 @@ export const Songs = () => {
     }
   };
 
-  const filteredAndSortedSongs = useCallback(() => {
-    if (!songs) return [];
-
-    let filtered = [...songs];
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(song => {
-        const title = song.title?.toLowerCase() || '';
-        const artist = song.artist?.toLowerCase() || '';
-        return title.includes(query) || artist.includes(query);
-      });
-    }
-
-    if (selectedCategory !== "All") {
-      filtered = filtered.filter(song => song.category === selectedCategory);
-    }
-
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === "title") {
-        comparison = (a.title || '').localeCompare(b.title || '');
-      } else if (sortBy === "duration") {
-        comparison = (a.duration || '').localeCompare(b.duration || '');
-      }
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
-
-    return filtered;
-  }, [songs, searchQuery, selectedCategory, sortBy, sortOrder]);
-
   if (isLoading) {
     return <div className="flex justify-center p-8 text-white">Loading songs...</div>;
   }
@@ -184,20 +143,8 @@ export const Songs = () => {
   return (
     <div className="container mx-auto px-4 py-8 mb-32">
       <h2 className="text-2xl font-bold mb-6 text-white">Featured Jain Songs</h2>
-      
-      <SearchAndFilter
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        sortOrder={sortOrder}
-        sortBy={sortBy}
-        onSortChange={handleSortChange}
-        onSortOrderChange={handleSortOrderChange}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-      />
-
-      <div className="grid grid-cols-1 gap-2">
-        {filteredAndSortedSongs().map((song, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {songs?.map((song, index) => (
           <SongCard
             key={song.id}
             song={song}
