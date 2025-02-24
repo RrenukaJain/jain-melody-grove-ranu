@@ -21,9 +21,9 @@ export const SongCard = ({
   onPlayPause,
 }: SongCardProps) => {
   return (
-    <div className="group bg-[#181818] rounded-lg p-4 hover:bg-[#282828] transition-all duration-300 relative overflow-hidden">
-      {/* Album Art Container - Reduced size */}
-      <div className="w-32 h-32 mb-4 rounded-md overflow-hidden bg-[#282828] relative mx-auto">
+    <div className="group bg-[#181818] rounded-lg p-3 hover:bg-[#282828] transition-all duration-300 relative overflow-hidden flex items-center gap-4">
+      {/* Album Art Container - Smaller size */}
+      <div className="w-12 h-12 rounded-md overflow-hidden bg-[#282828] relative flex-shrink-0">
         {song.cover_image ? (
           <img
             src={song.cover_image}
@@ -32,7 +32,7 @@ export const SongCard = ({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <Disc className="w-16 h-16" />
+            <Disc className="w-6 h-6" />
           </div>
         )}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -40,13 +40,12 @@ export const SongCard = ({
           variant="ghost"
           size="icon"
           className={`
-            absolute bottom-2 right-2 
-            w-10 h-10
-            text-[#1DB954] hover:text-[#1ed760] hover:scale-105
+            absolute inset-0 
+            w-full h-full
+            text-[#1DB954] hover:text-[#1ed760]
             opacity-0 group-hover:opacity-100 
             transition-all duration-300
-            bg-black/70 hover:bg-black/90
-            shadow-lg
+            bg-black/40 hover:bg-black/60
             ${currentlyPlaying === song.id ? 'opacity-100' : ''}
           `}
           onClick={() => onPlayPause(song.id, song.file_url, index)}
@@ -63,24 +62,24 @@ export const SongCard = ({
       </div>
 
       {/* Song Information */}
-      <div className="space-y-2 text-center">
-        <h3 className="font-semibold text-base text-white truncate">
+      <div className="flex-grow min-w-0">
+        <h3 className="font-medium text-sm text-white truncate">
           {song.title}
         </h3>
-        <div className="space-y-1">
-          <p className="text-sm text-gray-400 truncate">
-            {song.artist}
-          </p>
-          <p className="text-xs text-gray-500">
-            {song.duration}
-          </p>
-        </div>
+        <p className="text-xs text-gray-400 truncate">
+          {song.artist}
+        </p>
+      </div>
+
+      {/* Duration */}
+      <div className="text-xs text-gray-400 flex-shrink-0">
+        {song.duration}
       </div>
 
       {/* Playing Indicator */}
       {currentlyPlaying === song.id && (
-        <div className="absolute top-2 left-2 bg-[#1DB954] text-white text-xs px-2 py-1 rounded-full">
-          Now Playing
+        <div className="absolute top-1 right-1 bg-[#1DB954] text-white text-xs px-1.5 py-0.5 rounded-full">
+          Playing
         </div>
       )}
     </div>
