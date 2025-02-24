@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,11 +153,11 @@ export const Songs = () => {
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        song =>
-          song.title.toLowerCase().includes(query) ||
-          song.artist.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(song => {
+        const title = song.title?.toLowerCase() || '';
+        const artist = song.artist?.toLowerCase() || '';
+        return title.includes(query) || artist.includes(query);
+      });
     }
 
     if (selectedCategory !== "All") {
@@ -166,9 +167,9 @@ export const Songs = () => {
     filtered.sort((a, b) => {
       let comparison = 0;
       if (sortBy === "title") {
-        comparison = a.title.localeCompare(b.title);
+        comparison = (a.title || '').localeCompare(b.title || '');
       } else if (sortBy === "duration") {
-        comparison = a.duration.localeCompare(b.duration);
+        comparison = (a.duration || '').localeCompare(b.duration || '');
       }
       return sortOrder === "asc" ? comparison : -comparison;
     });
