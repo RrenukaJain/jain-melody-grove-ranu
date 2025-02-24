@@ -6,8 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 
-export const Navbar = () => {
+interface NavbarProps {
+  onSearch: (query: string) => void;
+}
+
+export const Navbar = ({ onSearch }: NavbarProps) => {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    onSearch(query);
+  };
 
   return (
     <nav className="fixed top-0 w-full z-50 glass">
@@ -37,6 +48,8 @@ export const Navbar = () => {
               <Search className="absolute left-3 text-gray-400 h-4 w-4" />
               <Input 
                 type="search"
+                value={searchQuery}
+                onChange={handleSearch}
                 placeholder="Search songs..."
                 className="w-full pl-10 bg-white/10 border-none text-white placeholder:text-gray-400"
               />

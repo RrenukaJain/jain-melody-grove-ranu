@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +6,11 @@ import { MusicControl } from "./MusicControl";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { Song } from "./types";
 
-export const Songs = () => {
+interface SongsProps {
+  searchQuery?: string;
+}
+
+export const Songs = ({ searchQuery = "" }: SongsProps) => {
   const {
     currentlyPlaying,
     isPlaying,
@@ -36,14 +39,25 @@ export const Songs = () => {
     },
   });
 
-  // Initialize shuffled indices when songs are loaded
+  const filteredSongs = useCallback(() => {
+    if (!songs) return [];
+    
+    if (!searchQuery) return songs;
+
+    const query = searchQuery.toLowerCase();
+    return songs.filter(song => {
+      const title = song.title?.toLowerCase() || '';
+      const artist = song.artist?.toLowerCase() || '';
+      return title.includes(query) || artist.includes(query);
+    });
+  }, [songs, searchQuery]);
+
   useEffect(() => {
     if (songs) {
       setShuffledIndices(Array.from({ length: songs.length }, (_, i) => i));
     }
   }, [songs]);
 
-  // Shuffle array using Fisher-Yates algorithm
   const shuffleArray = useCallback((array: number[]) => {
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
@@ -56,7 +70,6 @@ export const Songs = () => {
   const handleToggleShuffle = useCallback(() => {
     setIsShuffleOn(prev => {
       if (!prev && songs) {
-        // Turn shuffle on: create new shuffled array
         setShuffledIndices(shuffleArray(Array.from({ length: songs.length }, (_, i) => i)));
       }
       return !prev;
@@ -140,11 +153,13 @@ export const Songs = () => {
     return <div className="flex justify-center p-8 text-white">Loading songs...</div>;
   }
 
+  const displaySongs = filteredSongs();
+
   return (
     <div className="container mx-auto px-4 py-8 mb-32">
       <h2 className="text-2xl font-bold mb-6 text-white">Featured Jain Songs</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {songs?.map((song, index) => (
+        {displaySongs.map((song, index) => (
           <SongCard
             key={song.id}
             song={song}
