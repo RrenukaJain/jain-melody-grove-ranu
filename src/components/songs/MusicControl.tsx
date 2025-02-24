@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -145,75 +144,76 @@ export const MusicControl = ({
   if (!currentSong) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-4 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-2 md:p-4 z-50">
       <div className="container mx-auto">
-        <div className="flex items-center justify-between">
+        {/* Main wrapper - Changed to vertical layout on mobile */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
           {/* Left section - Song info */}
-          <div className="flex items-center space-x-4 w-1/4">
-            <div className="w-14 h-14 bg-[#282828] rounded flex items-center justify-center">
-              <div className="text-2xl text-gray-400">🎵</div>
+            <div className="flex items-center justify-center space-x-4 w-full md:w-1/4">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-[#282828] rounded flex items-center justify-center">
+              <div className="text-xl md:text-2xl text-gray-400">🎵</div>
             </div>
-            <div>
-              <h3 className="font-semibold text-sm text-white">{currentSong.title}</h3>
-              <p className="text-xs text-gray-400">{currentSong.artist}</p>
+            <div className="min-w-0 text-center"> {/* Added text-center */}
+              <h3 className="font-semibold text-sm text-white truncate">{currentSong.title}</h3>
+              <p className="text-xs text-gray-400 truncate">{currentSong.artist}</p>
             </div>
-          </div>
+            </div>
 
           {/* Center section - Player controls */}
-          <div className="flex flex-col items-center w-2/4">
-            <div className="flex items-center gap-4 mb-2">
+          <div className="flex flex-col items-center w-full md:w-2/4">
+            <div className="flex items-center gap-2 md:gap-4 mb-2">
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggleShuffle}
-                className={`text-gray-400 hover:text-white transition-colors ${
-                  isShuffleOn ? "text-[#1DB954]" : ""
-                }`}
+              variant="ghost"
+              size="icon"
+              onClick={onToggleShuffle}
+              className={`text-gray-400 hover:text-white transition-colors ${
+              isShuffleOn ? "text-[#1DB954]" : ""
+              }`}
               >
-                <Shuffle className="h-4 w-4" />
+              <Shuffle className="h-4 w-4" />
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={onPrevious}
-                className="text-gray-400 hover:text-white transition-colors"
+              variant="ghost"
+              size="icon"
+              onClick={onPrevious}
+              className="text-gray-400 hover:text-white transition-colors"
               >
-                <SkipBack className="h-5 w-5" />
+              <SkipBack className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
               <Button
-                size="icon"
-                onClick={onPlayPause}
-                className="w-12 h-12 bg-white rounded-full hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-white"
+              size="icon"
+              onClick={onPlayPause}
+              className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-white"
               >
-                {isPlaying ? (
-                  <Pause className="h-6 w-6" />
-                ) : (
-                  <Play className="h-6 w-6" />
-                )}
+              {isPlaying ? (
+              <Pause className="h-5 w-5 md:h-6 md:w-6" />
+              ) : (
+              <Play className="h-5 w-5 md:h-6 md:w-6" />
+              )}
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={onNext}
-                className="text-gray-400 hover:text-white transition-colors"
+              variant="ghost"
+              size="icon"
+              onClick={onNext}
+              className="text-gray-400 hover:text-white transition-colors"
               >
-                <SkipForward className="h-5 w-5" />
+              <SkipForward className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggleRepeat}
-                className={`text-gray-400 hover:text-white transition-colors ${
-                  isRepeatOn ? "text-[#1DB954]" : ""
-                }`}
+              variant="ghost"
+              size="icon"
+              onClick={onToggleRepeat}
+              className={`text-gray-400 hover:text-white transition-colors ${
+              isRepeatOn ? "text-[#1DB954]" : ""
+              }`}
               >
-                <Repeat className="h-4 w-4" />
+              <Repeat className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Progress bar */}
             <div className="w-full flex items-center gap-2">
-              <span className="text-xs text-gray-400 w-12 text-right">
+              <span className="text-[10px] md:text-xs text-gray-400 w-8 md:w-12 text-right">
                 {formatTime(currentTime)}
               </span>
               <div
@@ -231,7 +231,7 @@ export const MusicControl = ({
                 />
                 {showTimePreview !== null && (
                   <div
-                    className="absolute -top-8 px-2 py-1 rounded bg-[#282828] text-white text-xs transform -translate-x-1/2"
+                    className="absolute -top-8 px-2 py-1 rounded bg-[#282828] text-white text-xs transform -translate-x-1/2 hidden md:block"
                     style={{
                       left: `${(showTimePreview / duration) * 100}%`,
                     }}
@@ -240,14 +240,14 @@ export const MusicControl = ({
                   </div>
                 )}
               </div>
-              <span className="text-xs text-gray-400 w-12">
+              <span className="text-[10px] md:text-xs text-gray-400 w-8 md:w-12">
                 {formatTime(duration)}
               </span>
             </div>
           </div>
 
           {/* Right section - Volume control */}
-          <div className="flex items-center justify-end gap-2 w-1/4">
+          <div className="hidden md:flex items-center justify-end gap-2 w-1/4">
             <Button
               variant="ghost"
               size="icon"
