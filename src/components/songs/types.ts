@@ -6,6 +6,7 @@ export interface Song {
   duration: string;
   file_url: string;
   cover_image: string | null;
+  category?: string;
 }
 
 export interface AudioCache {
