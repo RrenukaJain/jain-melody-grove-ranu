@@ -25,7 +25,7 @@ export const Hero = () => {
 
   const handlePlayFeatured = () => {
     if (featuredSong) {
-      handlePlayPause(0, featuredSong);
+      handlePlayPause(featuredSong.id, featuredSong.file_url, 0);
       toast.success("Now playing featured song");
     } else {
       toast.error("No featured song available");
