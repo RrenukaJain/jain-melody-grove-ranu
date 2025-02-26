@@ -9,7 +9,15 @@ import { useNavigate } from "react-router-dom";
 import { Songs } from "@/components/songs/Songs";
 
 export const Hero = () => {
-  const { handlePlayPause } = useAudioPlayer();
+  const { 
+    handlePlayPause, 
+    currentlyPlaying,
+    isPlaying,
+    isLoadingSong,
+    audioRef,
+    currentSongIndex,
+    setIsPlaying 
+  } = useAudioPlayer();
   const navigate = useNavigate();
 
   const { data: featuredSongs } = useQuery({
@@ -39,6 +47,21 @@ export const Hero = () => {
 
   const handleBrowseCollection = () => {
     navigate('/collection');
+  };
+
+  const handleControlPlayPause = () => {
+    if (isPlaying) {
+      audioRef?.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef?.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const getCurrentSong = () => {
+    if (!featuredSongs || currentSongIndex === -1) return null;
+    return featuredSongs[currentSongIndex];
   };
 
   return (
@@ -106,7 +129,71 @@ export const Hero = () => {
         <div className="bg-[#121212] py-16">
           <div className="container mx-auto">
             <h2 className="text-3xl font-bold text-white mb-8 px-4">Featured Songs</h2>
-            <Songs featured searchQuery="" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredSongs.map((song, index) => (
+                <div
+                  key={song.id}
+                  className={`group bg-[#181818] rounded-lg p-3 hover:bg-[#282828] transition-all duration-300 relative overflow-hidden flex items-center gap-4`}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`
+                      absolute inset-0 
+                      w-full h-full
+                      text-[#1DB954] hover:text-[#1ed760]
+                      opacity-0 group-hover:opacity-100 
+                      transition-all duration-300
+                      bg-black/40 hover:bg-black/60
+                      ${currentlyPlaying === song.id ? 'opacity-100' : ''}
+                    `}
+                    onClick={() => handlePlayPause(song.id, song.file_url, index)}
+                    disabled={isLoadingSong && currentlyPlaying !== song.id}
+                  >
+                    <Play className="h-6 w-6" />
+                  </Button>
+
+                  {/* Song Information */}
+                  <div className="flex-grow min-w-0">
+                    <h3 className="font-medium text-sm text-white truncate">
+                      {song.title}
+                    </h3>
+                    <p className="text-xs text-gray-400 truncate">
+                      {song.artist}
+                    </p>
+                  </div>
+
+                  {/* Playing Indicator */}
+                  {currentlyPlaying === song.id && (
+                    <div className="absolute top-1 right-1 bg-[#1DB954] text-white text-xs px-1.5 py-0.5 rounded-full">
+                      Playing
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Music Control Section */}
+      {currentlyPlaying && (
+        <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-4">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="text-white">
+                <h3 className="font-medium">{getCurrentSong()?.title}</h3>
+                <p className="text-sm text-gray-400">{getCurrentSong()?.artist}</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleControlPlayPause}
+              className="text-white hover:text-[#1DB954]"
+            >
+              {isPlaying ? <Play className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+            </Button>
           </div>
         </div>
       )}
