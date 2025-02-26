@@ -1,8 +1,45 @@
 
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAudioPlayer } from "@/components/songs/hooks/useAudioPlayer";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Hero = () => {
+  const { handlePlayPause } = useAudioPlayer();
+
+  const { data: featuredSong } = useQuery({
+    queryKey: ['featured-song'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('songs')
+        .select('*')
+        .limit(1)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handlePlayFeatured = () => {
+    if (featuredSong) {
+      handlePlayPause(0, featuredSong);
+      toast.success("Now playing featured song");
+    } else {
+      toast.error("No featured song available");
+    }
+  };
+
+  const handleBrowseCollection = () => {
+    // Smooth scroll to the songs section
+    const songsSection = document.querySelector('.container');
+    if (songsSection) {
+      songsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       {/* Animated gradient background */}
@@ -41,6 +78,7 @@ export const Hero = () => {
             <Button 
               size="lg" 
               className="bg-[#1DB954] hover:bg-[#1ed760] text-white px-8 py-6 text-lg transition-all duration-300 hover:scale-105"
+              onClick={handlePlayFeatured}
             >
               <Play className="h-6 w-6 mr-3" />
               Play Featured
@@ -49,6 +87,7 @@ export const Hero = () => {
               size="lg" 
               variant="outline" 
               className="px-8 py-6 text-lg border-2 border-gray-700 hover:border-gray-500 text-white glass hover:bg-white/5 transition-all duration-300"
+              onClick={handleBrowseCollection}
             >
               Browse Collection
             </Button>
