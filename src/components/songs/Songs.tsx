@@ -8,9 +8,11 @@ import { Song } from "./types";
 
 interface SongsProps {
   searchQuery?: string;
+  categoryFilter?: string | null;
+  featured?: boolean;
 }
 
-export const Songs = ({ searchQuery = "" }: SongsProps) => {
+export const Songs = ({ searchQuery = "", categoryFilter = null, featured = false }: SongsProps) => {
   const {
     currentlyPlaying,
     isPlaying,
@@ -26,13 +28,22 @@ export const Songs = ({ searchQuery = "" }: SongsProps) => {
   const [isRepeatOn, setIsRepeatOn] = useState(false);
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
 
-  const { data: songs, isLoading } = useQuery({
-    queryKey: ['songs'],
+  const { data: songs = [], isLoading } = useQuery({
+    queryKey: ['songs', { featured, categoryFilter }],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('songs')
-        .select('*')
-        .order('title');
+        .select('*');
+
+      if (featured) {
+        query = query.limit(5);
+      }
+
+      if (categoryFilter) {
+        query = query.eq('artist', categoryFilter);
+      }
+
+      const { data, error } = await query.order('title');
       
       if (error) throw error;
       return data as Song[];
@@ -134,10 +145,10 @@ export const Songs = ({ searchQuery = "" }: SongsProps) => {
     handlePlayPause(prevSong.id, prevSong.file_url, prevIndex);
   }, [songs, currentSongIndex, getPreviousIndex, handlePlayPause]);
 
-  const getCurrentSong = () => {
+  const getCurrentSong = useCallback(() => {
     if (!songs || currentSongIndex === -1) return null;
     return songs[currentSongIndex];
-  };
+  }, [songs, currentSongIndex]);
 
   const handleControlPlayPause = () => {
     if (isPlaying) {
@@ -156,8 +167,11 @@ export const Songs = ({ searchQuery = "" }: SongsProps) => {
   const displaySongs = filteredSongs();
 
   return (
-    <div className="container mx-auto px-4 py-8 mb-32">
-      <h2 className="text-2xl font-bold mb-6 text-white">Featured Jain Songs</h2>
+    <div className={`container mx-auto px-4 py-8 ${!featured ? 'mb-32' : ''}`}>
+      {!featured && <h2 className="text-2xl font-bold mb-6 text-white">
+        {categoryFilter ? `${categoryFilter} Songs` : 'All Songs'}
+      </h2>}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displaySongs.map((song, index) => (
           <SongCard

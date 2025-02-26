@@ -1,22 +1,23 @@
-
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAudioPlayer } from "@/components/songs/hooks/useAudioPlayer";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
   const { handlePlayPause } = useAudioPlayer();
+  const navigate = useNavigate();
 
-  const { data: featuredSong } = useQuery({
-    queryKey: ['featured-song'],
+  const { data: featuredSongs } = useQuery({
+    queryKey: ['featured-songs'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('songs')
         .select('*')
-        .limit(1)
-        .single();
+        .limit(5)
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data;
@@ -24,20 +25,18 @@ export const Hero = () => {
   });
 
   const handlePlayFeatured = () => {
-    if (featuredSong) {
-      handlePlayPause(featuredSong.id, featuredSong.file_url, 0);
-      toast.success("Now playing featured song");
+    if (featuredSongs && featuredSongs.length > 0) {
+      // Start playing the first featured song
+      const firstSong = featuredSongs[0];
+      handlePlayPause(firstSong.id, firstSong.file_url, 0);
+      toast.success("Now playing featured songs");
     } else {
-      toast.error("No featured song available");
+      toast.error("No featured songs available");
     }
   };
 
   const handleBrowseCollection = () => {
-    // Smooth scroll to the songs section
-    const songsSection = document.querySelector('.container');
-    if (songsSection) {
-      songsSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    navigate('/collection');
   };
 
   return (
@@ -97,6 +96,13 @@ export const Hero = () => {
       
       {/* Bottom gradient overlay */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#121212] to-transparent" />
+      
+      {/* Display featured songs below hero */}
+      {featuredSongs && featuredSongs.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0">
+          <Songs featured searchQuery="" />
+        </div>
+      )}
     </div>
   );
 };
