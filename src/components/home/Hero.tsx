@@ -1,3 +1,4 @@
+
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAudioPlayer } from "@/components/songs/hooks/useAudioPlayer";
@@ -5,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { Songs } from "@/components/songs/Songs";
 
 export const Hero = () => {
   const { handlePlayPause } = useAudioPlayer();
