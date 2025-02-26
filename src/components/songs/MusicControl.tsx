@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -10,6 +10,7 @@ import {
   VolumeX,
   Repeat,
   Shuffle,
+  Loader2,
 } from "lucide-react";
 
 interface MusicControlProps {
@@ -49,6 +50,8 @@ export const MusicControl = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [showTimePreview, setShowTimePreview] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Reset states when audio source changes
   useEffect(() => {
@@ -94,27 +97,45 @@ export const MusicControl = ({
     };
   }, [audio, isDragging]);
 
-  const handleVolumeChange = (value: number[]) => {
+  const handleVolumeChange = useCallback((value: number[]) => {
     if (!audio) return;
-    const newVolume = value[0];
-    setVolume(newVolume);
-    audio.volume = newVolume / 100;
-  };
+    try {
+      const newVolume = value[0];
+      setVolume(newVolume);
+      audio.volume = newVolume / 100;
+    } catch (error) {
+      console.error('Error changing volume:', error);
+      setError('Failed to change volume');
+    }
+  }, [audio]);
 
-  const handleSeek = (value: number[]) => {
+  const handleSeek = useCallback((value: number[]) => {
     if (!audio) return;
-    setIsDragging(true);
-    const time = (value[0] / 100) * duration;
-    setProgress(value[0]);
-    setCurrentTime(time);
-  };
+    try {
+      setIsDragging(true);
+      const time = (value[0] / 100) * duration;
+      setProgress(value[0]);
+      setCurrentTime(time);
+    } catch (error) {
+      console.error('Error seeking:', error);
+      setError('Failed to seek');
+    }
+  }, [audio, duration]);
 
-  const handleSeekCommit = () => {
+  const handleSeekCommit = useCallback(() => {
     if (!audio) return;
-    const time = (progress / 100) * duration;
-    audio.currentTime = time;
-    setIsDragging(false);
-  };
+    try {
+      setIsLoading(true);
+      const time = (progress / 100) * duration;
+      audio.currentTime = time;
+      setIsDragging(false);
+    } catch (error) {
+      console.error('Error committing seek:', error);
+      setError('Failed to update playback position');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [audio, progress, duration]);
 
   const toggleMute = () => {
     if (!audio) return;
@@ -141,10 +162,66 @@ export const MusicControl = ({
     setShowTimePreview(previewTime);
   };
 
+  // Error effect
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Enhanced audio event handling
+  useEffect(() => {
+    if (!audio) return;
+
+    const handleError = (e: ErrorEvent) => {
+      console.error('Audio error:', e);
+      setError('An error occurred during playback');
+      setIsLoading(false);
+    };
+
+    const handleWaiting = () => setIsLoading(true);
+    const handlePlaying = () => setIsLoading(false);
+
+    audio.addEventListener('error', handleError as EventListener);
+    audio.addEventListener('waiting', handleWaiting);
+    audio.addEventListener('playing', handlePlaying);
+
+    return () => {
+      audio.removeEventListener('error', handleError as EventListener);
+      audio.removeEventListener('waiting', handleWaiting);
+      audio.removeEventListener('playing', handlePlaying);
+    };
+  }, [audio]);
+
+  // Render helpers
+  const renderPlayButton = () => (
+    <Button
+      size="icon"
+      onClick={onPlayPause}
+      disabled={isLoading}
+      aria-label={isPlaying ? "Pause" : "Play"}
+      className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-white"
+    >
+      {isLoading ? (
+        <Loader2 className="h-5 w-5 md:h-6 md:w-6 animate-spin" />
+      ) : isPlaying ? (
+        <Pause className="h-5 w-5 md:h-6 md:w-6" />
+      ) : (
+        <Play className="h-5 w-5 md:h-6 md:w-6" />
+      )}
+    </Button>
+  );
+
   if (!currentSong) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-2 md:p-4 z-50">
+      {error && (
+        <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-sm py-1 px-4 text-center transform -translate-y-full">
+          {error}
+        </div>
+      )}
       <div className="container mx-auto">
         {/* Main wrapper - Changed to vertical layout on mobile */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
@@ -166,6 +243,7 @@ export const MusicControl = ({
               variant="ghost"
               size="icon"
               onClick={onToggleShuffle}
+              aria-label={isShuffleOn ? "Disable shuffle" : "Enable shuffle"}
               className={`text-gray-400 hover:text-white transition-colors ${
               isShuffleOn ? "text-[#1DB954]" : ""
               }`}
@@ -176,25 +254,17 @@ export const MusicControl = ({
               variant="ghost"
               size="icon"
               onClick={onPrevious}
+              aria-label="Previous"
               className="text-gray-400 hover:text-white transition-colors"
               >
               <SkipBack className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
-              <Button
-              size="icon"
-              onClick={onPlayPause}
-              className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-white"
-              >
-              {isPlaying ? (
-              <Pause className="h-5 w-5 md:h-6 md:w-6" />
-              ) : (
-              <Play className="h-5 w-5 md:h-6 md:w-6" />
-              )}
-              </Button>
+              {renderPlayButton()}
               <Button
               variant="ghost"
               size="icon"
               onClick={onNext}
+              aria-label="Next"
               className="text-gray-400 hover:text-white transition-colors"
               >
               <SkipForward className="h-4 w-4 md:h-5 md:w-5" />
@@ -203,6 +273,7 @@ export const MusicControl = ({
               variant="ghost"
               size="icon"
               onClick={onToggleRepeat}
+              aria-label={isRepeatOn ? "Disable repeat" : "Enable repeat"}
               className={`text-gray-400 hover:text-white transition-colors ${
               isRepeatOn ? "text-[#1DB954]" : ""
               }`}
@@ -252,6 +323,7 @@ export const MusicControl = ({
               variant="ghost"
               size="icon"
               onClick={toggleMute}
+              aria-label={isMuted ? "Unmute" : "Mute"}
               className="text-gray-400 hover:text-white transition-colors"
             >
               {isMuted ? (
