@@ -30,7 +30,7 @@ export const Songs = forwardRef<
     preloadAdjacentSongs,
   } = useAudioPlayer();
 
-  // Expose handlePlaySong function through ref
+  // Expose functions through ref
   useImperativeHandle(ref, () => ({
     handlePlaySong: (songId: string) => {
       if (!songs) return;
@@ -38,6 +38,13 @@ export const Songs = forwardRef<
       if (songIndex !== -1) {
         const song = songs[songIndex];
         handlePlayPause(song.id, song.file_url, songIndex);
+      }
+    },
+    isPlaying: () => isPlaying,
+    getCurrentlyPlayingSongId: () => currentlyPlaying,
+    togglePlayPause: () => {
+      if (audioRef) {
+        handleControlPlayPause();
       }
     }
   }));

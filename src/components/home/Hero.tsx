@@ -1,18 +1,34 @@
-
-import { Play } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Songs } from "@/components/songs/Songs";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 export const Hero = () => {
   const navigate = useNavigate();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  
   const songsComponentRef = useRef<{
     handlePlaySong: (songId: string) => void;
+    isPlaying: () => boolean;
+    getCurrentlyPlayingSongId: () => string | null;
+    togglePlayPause: () => void;
   } | null>(null);
+
+  // Check playback status periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (songsComponentRef.current) {
+        setIsPlaying(songsComponentRef.current.isPlaying());
+      }
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: featuredSongs } = useQuery({
     queryKey: ['featured-songs'],
@@ -30,12 +46,22 @@ export const Hero = () => {
 
   const handlePlayFeatured = () => {
     if (featuredSongs && featuredSongs.length > 0 && songsComponentRef.current) {
-      // Start playing the first featured song
-      const firstSong = featuredSongs[0];
-      
-      // Use the Songs component's handlePlaySong function
-      songsComponentRef.current.handlePlaySong(firstSong.id);
-      toast.success("Now playing featured songs");
+      if (isPlaying) {
+        // If already playing, just toggle play/pause
+        songsComponentRef.current.togglePlayPause();
+      } else {
+        // If not playing or playing a different song, start playing the first featured song
+        const firstSong = featuredSongs[0];
+        
+        // Show toast only on initial play, not when toggling
+        if (!hasStartedPlaying) {
+          toast.success("Now playing featured songs");
+          setHasStartedPlaying(true);
+        }
+        
+        // Use the Songs component's handlePlaySong function
+        songsComponentRef.current.handlePlaySong(firstSong.id);
+      }
     } else {
       toast.error("No featured songs available");
     }
@@ -86,8 +112,17 @@ export const Hero = () => {
                 className="bg-[#1DB954] hover:bg-[#1ed760] text-white px-8 py-6 text-lg transition-all duration-300 hover:scale-105"
                 onClick={handlePlayFeatured}
               >
-                <Play className="h-6 w-6 mr-3" />
-                Play Featured
+                {isPlaying ? (
+                  <>
+                    <Pause className="h-6 w-6 mr-3" />
+                    Pause Featured
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-6 w-6 mr-3" />
+                    Play Featured
+                  </>
+                )}
               </Button>
               <Button 
                 size="lg" 
