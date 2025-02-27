@@ -1,32 +1,10 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-  Repeat,
-  Shuffle,
-  Loader2,
-  ChevronUp,
-  ChevronDown,
-  Clock,
-  Music,
-  ListMusic,
-} from "lucide-react";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerClose,
-} from "@/components/ui/drawer";
+import { ChevronUp } from "lucide-react";
+import { PlaybackControls } from "./PlaybackControls";
+import { ProgressBar } from "./ProgressBar";
+import { VolumeControl } from "./VolumeControl";
+import { SongDrawer } from "./SongDrawer";
 
 interface MusicControlProps {
   currentSong: {
@@ -164,19 +142,9 @@ export const MusicControl = ({
     }
   };
 
-  const formatTime = (time: number) => {
-    if (!isFinite(time)) return "0:00";
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  const handleProgressHover = (event: React.MouseEvent<HTMLDivElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const percent = ((event.clientX - bounds.left) / bounds.width) * 100;
-    const previewTime = (percent / 100) * duration;
+  const handleProgressHover = useCallback((previewTime: number | null) => {
     setShowTimePreview(previewTime);
-  };
+  }, []);
 
   // Error effect
   useEffect(() => {
@@ -209,31 +177,6 @@ export const MusicControl = ({
       audio.removeEventListener('playing', handlePlaying);
     };
   }, [audio]);
-
-  // Render helpers
-  const renderPlayButton = (size?: "sm" | "lg") => (
-    <Button
-      size={size === "lg" ? "lg" : "icon"}
-      onClick={onPlayPause}
-      disabled={isLoading}
-      aria-label={isPlaying ? "Pause" : "Play"}
-      className={`
-        ${size === "lg" 
-          ? "w-16 h-16 rounded-full" 
-          : "w-10 h-10 md:w-12 md:h-12 rounded-full"
-        }
-        bg-white hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-white
-      `}
-    >
-      {isLoading ? (
-        <Loader2 className={`${size === "lg" ? "h-8 w-8" : "h-5 w-5 md:h-6 md:w-6"} animate-spin`} />
-      ) : isPlaying ? (
-        <Pause className={size === "lg" ? "h-8 w-8" : "h-5 w-5 md:h-6 md:w-6"} />
-      ) : (
-        <Play className={size === "lg" ? "h-8 w-8" : "h-5 w-5 md:h-6 md:w-6"} />
-      )}
-    </Button>
-  );
 
   if (!currentSong) return null;
 
@@ -271,105 +214,40 @@ export const MusicControl = ({
 
             {/* Center section - Player controls */}
             <div className="flex flex-col items-center w-full md:w-2/4">
-              <div className="flex items-center gap-2 md:gap-4 mb-2">
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggleShuffle}
-                aria-label={isShuffleOn ? "Disable shuffle" : "Enable shuffle"}
-                className={`text-gray-400 hover:text-white transition-colors ${
-                isShuffleOn ? "text-[#1DB954]" : ""
-                }`}
-                >
-                <Shuffle className="h-4 w-4" />
-                </Button>
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={onPrevious}
-                aria-label="Previous"
-                className="text-gray-400 hover:text-white transition-colors"
-                >
-                <SkipBack className="h-4 w-4 md:h-5 md:w-5" />
-                </Button>
-                {renderPlayButton()}
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={onNext}
-                aria-label="Next"
-                className="text-gray-400 hover:text-white transition-colors"
-                >
-                <SkipForward className="h-4 w-4 md:h-5 md:w-5" />
-                </Button>
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggleRepeat}
-                aria-label={isRepeatOn ? "Disable repeat" : "Enable repeat"}
-                className={`text-gray-400 hover:text-white transition-colors ${
-                isRepeatOn ? "text-[#1DB954]" : ""
-                }`}
-                >
-                <Repeat className="h-4 w-4" />
-                </Button>
+              <div className="mb-2">
+                <PlaybackControls
+                  onPlayPause={onPlayPause}
+                  onNext={onNext}
+                  onPrevious={onPrevious}
+                  onToggleShuffle={onToggleShuffle}
+                  onToggleRepeat={onToggleRepeat}
+                  isPlaying={isPlaying}
+                  isLoading={isLoading}
+                  isShuffleOn={isShuffleOn}
+                  isRepeatOn={isRepeatOn}
+                />
               </div>
 
               {/* Progress bar */}
-              <div className="w-full flex items-center gap-2">
-                <span className="text-[10px] md:text-xs text-gray-400 w-8 md:w-12 text-right">
-                  {formatTime(currentTime)}
-                </span>
-                <div
-                  className="relative flex-1"
-                  onMouseMove={handleProgressHover}
-                  onMouseLeave={() => setShowTimePreview(null)}
-                >
-                  <Slider
-                    value={[progress]}
-                    onValueChange={handleSeek}
-                    onValueCommit={handleSeekCommit}
-                    max={100}
-                    step={0.1}
-                    className="w-full"
-                  />
-                  {showTimePreview !== null && (
-                    <div
-                      className="absolute -top-8 px-2 py-1 rounded bg-[#282828] text-white text-xs transform -translate-x-1/2 hidden md:block"
-                      style={{
-                        left: `${(showTimePreview / duration) * 100}%`,
-                      }}
-                    >
-                      {formatTime(showTimePreview)}
-                    </div>
-                  )}
-                </div>
-                <span className="text-[10px] md:text-xs text-gray-400 w-8 md:w-12">
-                  {formatTime(duration)}
-                </span>
-              </div>
+              <ProgressBar
+                currentTime={currentTime}
+                duration={duration}
+                progress={progress}
+                onSeek={handleSeek}
+                onSeekCommit={handleSeekCommit}
+                onProgressHover={handleProgressHover}
+                showTimePreview={showTimePreview}
+              />
             </div>
 
             {/* Right section - Volume control */}
             <div className="hidden md:flex items-center justify-end gap-2 w-1/4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMute}
-                aria-label={isMuted ? "Unmute" : "Mute"}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                {isMuted ? (
-                  <VolumeX className="h-5 w-5" />
-                ) : (
-                  <Volume2 className="h-5 w-5" />
-                )}
-              </Button>
-              <Slider
-                value={[isMuted ? 0 : volume]}
-                onValueChange={handleVolumeChange}
-                max={100}
-                className="w-24"
+              <VolumeControl
+                volume={volume}
+                isMuted={isMuted}
+                onVolumeChange={handleVolumeChange}
+                onToggleMute={toggleMute}
+                compact
               />
             </div>
           </div>
@@ -377,147 +255,29 @@ export const MusicControl = ({
       </div>
 
       {/* Drawer for expanded song details */}
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="bg-[#121212] text-white border-t border-[#282828]">
-          <div className="mx-auto w-full max-w-4xl">
-            <DrawerHeader className="text-center">
-              <div className="flex justify-center my-2">
-                <div 
-                  className="cursor-pointer hover:bg-[#282828] p-1 rounded-full transition-colors"
-                  onClick={() => setDrawerOpen(false)}
-                >
-                  <ChevronDown className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <DrawerTitle className="text-2xl font-bold">{currentSong.title}</DrawerTitle>
-              <DrawerDescription className="text-gray-400 text-lg">{currentSong.artist}</DrawerDescription>
-            </DrawerHeader>
-            
-            <div className="p-6">
-              {/* Album Art / Visualization */}
-              <div className="flex justify-center mb-8">
-                <div className="w-48 h-48 md:w-64 md:h-64 bg-[#282828] rounded-lg flex items-center justify-center">
-                  <Music className="h-20 w-20 text-[#1DB954] opacity-50" />
-                </div>
-              </div>
-              
-              {/* Song Info Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div className="bg-[#181818] p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
-                    <Clock className="h-4 w-4 mr-2" /> Duration
-                  </h3>
-                  <p className="text-lg">{currentSong.duration || formatTime(duration)}</p>
-                </div>
-                
-                <div className="bg-[#181818] p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
-                    <ListMusic className="h-4 w-4 mr-2" /> Genre
-                  </h3>
-                  <p className="text-lg">Spiritual</p>
-                </div>
-              </div>
-              
-              {/* Enhanced Playback Controls */}
-              <div className="flex flex-col items-center">
-                {/* Progress bar - Enhanced for drawer */}
-                <div className="w-full flex items-center gap-2 mb-6">
-                  <span className="text-sm text-gray-400 w-12 text-right">
-                    {formatTime(currentTime)}
-                  </span>
-                  <div className="relative flex-1">
-                    <Slider
-                      value={[progress]}
-                      onValueChange={handleSeek}
-                      onValueCommit={handleSeekCommit}
-                      max={100}
-                      step={0.1}
-                      className="w-full"
-                    />
-                  </div>
-                  <span className="text-sm text-gray-400 w-12">
-                    {formatTime(duration)}
-                  </span>
-                </div>
-                
-                {/* Playback Controls - Larger in drawer */}
-                <div className="flex items-center gap-6 mb-6">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onToggleShuffle}
-                    aria-label={isShuffleOn ? "Disable shuffle" : "Enable shuffle"}
-                    className={`h-12 w-12 text-gray-400 hover:text-white transition-colors ${
-                    isShuffleOn ? "text-[#1DB954]" : ""
-                    }`}
-                  >
-                    <Shuffle className="h-6 w-6" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onPrevious}
-                    aria-label="Previous"
-                    className="h-12 w-12 text-gray-400 hover:text-white transition-colors"
-                  >
-                    <SkipBack className="h-6 w-6" />
-                  </Button>
-                  {renderPlayButton("lg")}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onNext}
-                    aria-label="Next"
-                    className="h-12 w-12 text-gray-400 hover:text-white transition-colors"
-                  >
-                    <SkipForward className="h-6 w-6" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onToggleRepeat}
-                    aria-label={isRepeatOn ? "Disable repeat" : "Enable repeat"}
-                    className={`h-12 w-12 text-gray-400 hover:text-white transition-colors ${
-                    isRepeatOn ? "text-[#1DB954]" : ""
-                    }`}
-                  >
-                    <Repeat className="h-6 w-6" />
-                  </Button>
-                </div>
-                
-                {/* Volume Control */}
-                <div className="flex items-center gap-4 w-full max-w-xs">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleMute}
-                    aria-label={isMuted ? "Unmute" : "Mute"}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    {isMuted ? (
-                      <VolumeX className="h-5 w-5" />
-                    ) : (
-                      <Volume2 className="h-5 w-5" />
-                    )}
-                  </Button>
-                  <Slider
-                    value={[isMuted ? 0 : volume]}
-                    onValueChange={handleVolumeChange}
-                    max={100}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <DrawerFooter className="border-t border-[#282828] py-4">
-              <p className="text-xs text-center text-gray-500">
-                Listening to sacred Jain music • Enhancing your spiritual journey
-              </p>
-            </DrawerFooter>
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <SongDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        currentSong={currentSong}
+        duration={duration}
+        currentTime={currentTime}
+        progress={progress}
+        volume={volume}
+        isMuted={isMuted}
+        isPlaying={isPlaying}
+        isLoading={isLoading}
+        isShuffleOn={isShuffleOn}
+        isRepeatOn={isRepeatOn}
+        onPlayPause={onPlayPause}
+        onNext={onNext}
+        onPrevious={onPrevious}
+        onToggleShuffle={onToggleShuffle}
+        onToggleRepeat={onToggleRepeat}
+        onSeek={handleSeek}
+        onSeekCommit={handleSeekCommit}
+        onVolumeChange={handleVolumeChange}
+        onToggleMute={toggleMute}
+      />
     </>
   );
 };
