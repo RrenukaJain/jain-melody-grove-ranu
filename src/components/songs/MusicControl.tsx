@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -11,7 +12,21 @@ import {
   Repeat,
   Shuffle,
   Loader2,
+  ChevronUp,
+  ChevronDown,
+  Clock,
+  Music,
+  ListMusic,
 } from "lucide-react";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+} from "@/components/ui/drawer";
 
 interface MusicControlProps {
   currentSong: {
@@ -52,6 +67,7 @@ export const MusicControl = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Reset states when audio source changes
   useEffect(() => {
@@ -195,20 +211,26 @@ export const MusicControl = ({
   }, [audio]);
 
   // Render helpers
-  const renderPlayButton = () => (
+  const renderPlayButton = (size?: "sm" | "lg") => (
     <Button
-      size="icon"
+      size={size === "lg" ? "lg" : "icon"}
       onClick={onPlayPause}
       disabled={isLoading}
       aria-label={isPlaying ? "Pause" : "Play"}
-      className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-white"
+      className={`
+        ${size === "lg" 
+          ? "w-16 h-16 rounded-full" 
+          : "w-10 h-10 md:w-12 md:h-12 rounded-full"
+        }
+        bg-white hover:scale-105 transition-transform flex items-center justify-center text-black hover:bg-white
+      `}
     >
       {isLoading ? (
-        <Loader2 className="h-5 w-5 md:h-6 md:w-6 animate-spin" />
+        <Loader2 className={`${size === "lg" ? "h-8 w-8" : "h-5 w-5 md:h-6 md:w-6"} animate-spin`} />
       ) : isPlaying ? (
-        <Pause className="h-5 w-5 md:h-6 md:w-6" />
+        <Pause className={size === "lg" ? "h-8 w-8" : "h-5 w-5 md:h-6 md:w-6"} />
       ) : (
-        <Play className="h-5 w-5 md:h-6 md:w-6" />
+        <Play className={size === "lg" ? "h-8 w-8" : "h-5 w-5 md:h-6 md:w-6"} />
       )}
     </Button>
   );
@@ -216,131 +238,286 @@ export const MusicControl = ({
   if (!currentSong) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-2 md:p-4 z-50">
-      {error && (
-        <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-sm py-1 px-4 text-center transform -translate-y-full">
-          {error}
-        </div>
-      )}
-      <div className="container mx-auto">
-        {/* Main wrapper - Changed to vertical layout on mobile */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
-          {/* Left section - Song info */}
-            <div className="flex items-center justify-center space-x-4 w-full md:w-1/4">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-[#282828] rounded flex items-center justify-center">
-              <div className="text-xl md:text-2xl text-gray-400">🎵</div>
-            </div>
-            <div className="min-w-0 text-center"> {/* Added text-center */}
-              <h3 className="font-semibold text-sm text-white truncate">{currentSong.title}</h3>
-              <p className="text-xs text-gray-400 truncate">{currentSong.artist}</p>
-            </div>
-            </div>
-
-          {/* Center section - Player controls */}
-          <div className="flex flex-col items-center w-full md:w-2/4">
-            <div className="flex items-center gap-2 md:gap-4 mb-2">
-              <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggleShuffle}
-              aria-label={isShuffleOn ? "Disable shuffle" : "Enable shuffle"}
-              className={`text-gray-400 hover:text-white transition-colors ${
-              isShuffleOn ? "text-[#1DB954]" : ""
-              }`}
-              >
-              <Shuffle className="h-4 w-4" />
-              </Button>
-              <Button
-              variant="ghost"
-              size="icon"
-              onClick={onPrevious}
-              aria-label="Previous"
-              className="text-gray-400 hover:text-white transition-colors"
-              >
-              <SkipBack className="h-4 w-4 md:h-5 md:w-5" />
-              </Button>
-              {renderPlayButton()}
-              <Button
-              variant="ghost"
-              size="icon"
-              onClick={onNext}
-              aria-label="Next"
-              className="text-gray-400 hover:text-white transition-colors"
-              >
-              <SkipForward className="h-4 w-4 md:h-5 md:w-5" />
-              </Button>
-              <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggleRepeat}
-              aria-label={isRepeatOn ? "Disable repeat" : "Enable repeat"}
-              className={`text-gray-400 hover:text-white transition-colors ${
-              isRepeatOn ? "text-[#1DB954]" : ""
-              }`}
-              >
-              <Repeat className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Progress bar */}
-            <div className="w-full flex items-center gap-2">
-              <span className="text-[10px] md:text-xs text-gray-400 w-8 md:w-12 text-right">
-                {formatTime(currentTime)}
-              </span>
-              <div
-                className="relative flex-1"
-                onMouseMove={handleProgressHover}
-                onMouseLeave={() => setShowTimePreview(null)}
-              >
-                <Slider
-                  value={[progress]}
-                  onValueChange={handleSeek}
-                  onValueCommit={handleSeekCommit}
-                  max={100}
-                  step={0.1}
-                  className="w-full"
-                />
-                {showTimePreview !== null && (
-                  <div
-                    className="absolute -top-8 px-2 py-1 rounded bg-[#282828] text-white text-xs transform -translate-x-1/2 hidden md:block"
-                    style={{
-                      left: `${(showTimePreview / duration) * 100}%`,
-                    }}
-                  >
-                    {formatTime(showTimePreview)}
-                  </div>
-                )}
-              </div>
-              <span className="text-[10px] md:text-xs text-gray-400 w-8 md:w-12">
-                {formatTime(duration)}
-              </span>
+    <>
+      <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-2 md:p-4 z-50">
+        {error && (
+          <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-sm py-1 px-4 text-center transform -translate-y-full">
+            {error}
+          </div>
+        )}
+        <div className="container mx-auto relative">
+          {/* Drawer Toggle Button */}
+          <div 
+            className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 cursor-pointer"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <div className="bg-[#282828] p-1 rounded-full hover:bg-[#3E3E3E] transition-colors">
+              <ChevronUp className="h-5 w-5 text-white" />
             </div>
           </div>
+          
+          {/* Main wrapper - Changed to vertical layout on mobile */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
+            {/* Left section - Song info */}
+            <div className="flex items-center justify-center space-x-4 w-full md:w-1/4">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-[#282828] rounded flex items-center justify-center">
+                <div className="text-xl md:text-2xl text-gray-400">🎵</div>
+              </div>
+              <div className="min-w-0 text-center md:text-left">
+                <h3 className="font-semibold text-sm text-white truncate">{currentSong.title}</h3>
+                <p className="text-xs text-gray-400 truncate">{currentSong.artist}</p>
+              </div>
+            </div>
 
-          {/* Right section - Volume control */}
-          <div className="hidden md:flex items-center justify-end gap-2 w-1/4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleMute}
-              aria-label={isMuted ? "Unmute" : "Mute"}
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              {isMuted ? (
-                <VolumeX className="h-5 w-5" />
-              ) : (
-                <Volume2 className="h-5 w-5" />
-              )}
-            </Button>
-            <Slider
-              value={[isMuted ? 0 : volume]}
-              onValueChange={handleVolumeChange}
-              max={100}
-              className="w-24"
-            />
+            {/* Center section - Player controls */}
+            <div className="flex flex-col items-center w-full md:w-2/4">
+              <div className="flex items-center gap-2 md:gap-4 mb-2">
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleShuffle}
+                aria-label={isShuffleOn ? "Disable shuffle" : "Enable shuffle"}
+                className={`text-gray-400 hover:text-white transition-colors ${
+                isShuffleOn ? "text-[#1DB954]" : ""
+                }`}
+                >
+                <Shuffle className="h-4 w-4" />
+                </Button>
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={onPrevious}
+                aria-label="Previous"
+                className="text-gray-400 hover:text-white transition-colors"
+                >
+                <SkipBack className="h-4 w-4 md:h-5 md:w-5" />
+                </Button>
+                {renderPlayButton()}
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={onNext}
+                aria-label="Next"
+                className="text-gray-400 hover:text-white transition-colors"
+                >
+                <SkipForward className="h-4 w-4 md:h-5 md:w-5" />
+                </Button>
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleRepeat}
+                aria-label={isRepeatOn ? "Disable repeat" : "Enable repeat"}
+                className={`text-gray-400 hover:text-white transition-colors ${
+                isRepeatOn ? "text-[#1DB954]" : ""
+                }`}
+                >
+                <Repeat className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full flex items-center gap-2">
+                <span className="text-[10px] md:text-xs text-gray-400 w-8 md:w-12 text-right">
+                  {formatTime(currentTime)}
+                </span>
+                <div
+                  className="relative flex-1"
+                  onMouseMove={handleProgressHover}
+                  onMouseLeave={() => setShowTimePreview(null)}
+                >
+                  <Slider
+                    value={[progress]}
+                    onValueChange={handleSeek}
+                    onValueCommit={handleSeekCommit}
+                    max={100}
+                    step={0.1}
+                    className="w-full"
+                  />
+                  {showTimePreview !== null && (
+                    <div
+                      className="absolute -top-8 px-2 py-1 rounded bg-[#282828] text-white text-xs transform -translate-x-1/2 hidden md:block"
+                      style={{
+                        left: `${(showTimePreview / duration) * 100}%`,
+                      }}
+                    >
+                      {formatTime(showTimePreview)}
+                    </div>
+                  )}
+                </div>
+                <span className="text-[10px] md:text-xs text-gray-400 w-8 md:w-12">
+                  {formatTime(duration)}
+                </span>
+              </div>
+            </div>
+
+            {/* Right section - Volume control */}
+            <div className="hidden md:flex items-center justify-end gap-2 w-1/4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleMute}
+                aria-label={isMuted ? "Unmute" : "Mute"}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                {isMuted ? (
+                  <VolumeX className="h-5 w-5" />
+                ) : (
+                  <Volume2 className="h-5 w-5" />
+                )}
+              </Button>
+              <Slider
+                value={[isMuted ? 0 : volume]}
+                onValueChange={handleVolumeChange}
+                max={100}
+                className="w-24"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Drawer for expanded song details */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent className="bg-[#121212] text-white border-t border-[#282828]">
+          <div className="mx-auto w-full max-w-4xl">
+            <DrawerHeader className="text-center">
+              <div className="flex justify-center my-2">
+                <div 
+                  className="cursor-pointer hover:bg-[#282828] p-1 rounded-full transition-colors"
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  <ChevronDown className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <DrawerTitle className="text-2xl font-bold">{currentSong.title}</DrawerTitle>
+              <DrawerDescription className="text-gray-400 text-lg">{currentSong.artist}</DrawerDescription>
+            </DrawerHeader>
+            
+            <div className="p-6">
+              {/* Album Art / Visualization */}
+              <div className="flex justify-center mb-8">
+                <div className="w-48 h-48 md:w-64 md:h-64 bg-[#282828] rounded-lg flex items-center justify-center">
+                  <Music className="h-20 w-20 text-[#1DB954] opacity-50" />
+                </div>
+              </div>
+              
+              {/* Song Info Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-[#181818] p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
+                    <Clock className="h-4 w-4 mr-2" /> Duration
+                  </h3>
+                  <p className="text-lg">{currentSong.duration || formatTime(duration)}</p>
+                </div>
+                
+                <div className="bg-[#181818] p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
+                    <ListMusic className="h-4 w-4 mr-2" /> Genre
+                  </h3>
+                  <p className="text-lg">Spiritual</p>
+                </div>
+              </div>
+              
+              {/* Enhanced Playback Controls */}
+              <div className="flex flex-col items-center">
+                {/* Progress bar - Enhanced for drawer */}
+                <div className="w-full flex items-center gap-2 mb-6">
+                  <span className="text-sm text-gray-400 w-12 text-right">
+                    {formatTime(currentTime)}
+                  </span>
+                  <div className="relative flex-1">
+                    <Slider
+                      value={[progress]}
+                      onValueChange={handleSeek}
+                      onValueCommit={handleSeekCommit}
+                      max={100}
+                      step={0.1}
+                      className="w-full"
+                    />
+                  </div>
+                  <span className="text-sm text-gray-400 w-12">
+                    {formatTime(duration)}
+                  </span>
+                </div>
+                
+                {/* Playback Controls - Larger in drawer */}
+                <div className="flex items-center gap-6 mb-6">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onToggleShuffle}
+                    aria-label={isShuffleOn ? "Disable shuffle" : "Enable shuffle"}
+                    className={`h-12 w-12 text-gray-400 hover:text-white transition-colors ${
+                    isShuffleOn ? "text-[#1DB954]" : ""
+                    }`}
+                  >
+                    <Shuffle className="h-6 w-6" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onPrevious}
+                    aria-label="Previous"
+                    className="h-12 w-12 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <SkipBack className="h-6 w-6" />
+                  </Button>
+                  {renderPlayButton("lg")}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onNext}
+                    aria-label="Next"
+                    className="h-12 w-12 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <SkipForward className="h-6 w-6" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onToggleRepeat}
+                    aria-label={isRepeatOn ? "Disable repeat" : "Enable repeat"}
+                    className={`h-12 w-12 text-gray-400 hover:text-white transition-colors ${
+                    isRepeatOn ? "text-[#1DB954]" : ""
+                    }`}
+                  >
+                    <Repeat className="h-6 w-6" />
+                  </Button>
+                </div>
+                
+                {/* Volume Control */}
+                <div className="flex items-center gap-4 w-full max-w-xs">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleMute}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    {isMuted ? (
+                      <VolumeX className="h-5 w-5" />
+                    ) : (
+                      <Volume2 className="h-5 w-5" />
+                    )}
+                  </Button>
+                  <Slider
+                    value={[isMuted ? 0 : volume]}
+                    onValueChange={handleVolumeChange}
+                    max={100}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <DrawerFooter className="border-t border-[#282828] py-4">
+              <p className="text-xs text-center text-gray-500">
+                Listening to sacred Jain music • Enhancing your spiritual journey
+              </p>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 };
