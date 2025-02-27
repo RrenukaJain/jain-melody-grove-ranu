@@ -1,16 +1,18 @@
 
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAudioPlayer } from "@/components/songs/hooks/useAudioPlayer";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Songs } from "@/components/songs/Songs";
+import { useRef } from "react";
 
 export const Hero = () => {
-  const { handlePlayPause } = useAudioPlayer();
   const navigate = useNavigate();
+  const songsComponentRef = useRef<{
+    handlePlaySong: (songId: string) => void;
+  } | null>(null);
 
   const { data: featuredSongs } = useQuery({
     queryKey: ['featured-songs'],
@@ -27,10 +29,12 @@ export const Hero = () => {
   });
 
   const handlePlayFeatured = () => {
-    if (featuredSongs && featuredSongs.length > 0) {
+    if (featuredSongs && featuredSongs.length > 0 && songsComponentRef.current) {
       // Start playing the first featured song
       const firstSong = featuredSongs[0];
-      handlePlayPause(firstSong.id, firstSong.file_url, 0);
+      
+      // Use the Songs component's handlePlaySong function
+      songsComponentRef.current.handlePlaySong(firstSong.id);
       toast.success("Now playing featured songs");
     } else {
       toast.error("No featured songs available");
@@ -106,7 +110,7 @@ export const Hero = () => {
         <div className="bg-[#121212] py-16">
           <div className="container mx-auto">
             <h2 className="text-3xl font-bold text-white mb-8 px-4">Featured Songs</h2>
-            <Songs featured searchQuery="" />
+            <Songs ref={songsComponentRef} featured searchQuery="" />
           </div>
         </div>
       )}

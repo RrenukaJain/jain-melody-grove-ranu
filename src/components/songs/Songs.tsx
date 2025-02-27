@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SongCard } from "./SongCard";
@@ -10,9 +10,15 @@ interface SongsProps {
   searchQuery?: string;
   categoryFilter?: string | null;
   featured?: boolean;
+  ref?: React.RefObject<{
+    handlePlaySong: (songId: string) => void;
+  }>;
 }
 
-export const Songs = ({ searchQuery = "", categoryFilter = null, featured = false }: SongsProps) => {
+export const Songs = forwardRef<
+  { handlePlaySong: (songId: string) => void },
+  SongsProps
+>(({ searchQuery = "", categoryFilter = null, featured = false }, ref) => {
   const {
     currentlyPlaying,
     isPlaying,
@@ -23,6 +29,18 @@ export const Songs = ({ searchQuery = "", categoryFilter = null, featured = fals
     handlePlayPause,
     preloadAdjacentSongs,
   } = useAudioPlayer();
+
+  // Expose handlePlaySong function through ref
+  useImperativeHandle(ref, () => ({
+    handlePlaySong: (songId: string) => {
+      if (!songs) return;
+      const songIndex = songs.findIndex(song => song.id === songId);
+      if (songIndex !== -1) {
+        const song = songs[songIndex];
+        handlePlayPause(song.id, song.file_url, songIndex);
+      }
+    }
+  }));
 
   const [isShuffleOn, setIsShuffleOn] = useState(false);
   const [isRepeatOn, setIsRepeatOn] = useState(false);
@@ -36,14 +54,16 @@ export const Songs = ({ searchQuery = "", categoryFilter = null, featured = fals
         .select('*');
 
       if (featured) {
-        query = query.limit(5);
+        query = query.limit(5).order('created_at', { ascending: false });
+      } else {
+        query = query.order('title');
       }
 
       if (categoryFilter) {
         query = query.eq('artist', categoryFilter);
       }
 
-      const { data, error } = await query.order('title');
+      const { data, error } = await query
       
       if (error) throw error;
       return data as Song[];
@@ -200,4 +220,5 @@ export const Songs = ({ searchQuery = "", categoryFilter = null, featured = fals
       />
     </div>
   );
-};
+}
+);
