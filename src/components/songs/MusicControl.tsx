@@ -1,10 +1,13 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronUp } from "lucide-react";
 import { PlaybackControls } from "./PlaybackControls";
 import { ProgressBar } from "./ProgressBar";
 import { VolumeControl } from "./VolumeControl";
 import { SongDrawer } from "./SongDrawer";
+import { SongInfo } from "./music-controls/SongInfo";
+import { DrawerToggle } from "./music-controls/DrawerToggle";
+import { ErrorMessage } from "./music-controls/ErrorMessage";
+import { TimeDisplay } from "./music-controls/TimeDisplay";
 
 interface MusicControlProps {
   currentSong: {
@@ -55,6 +58,7 @@ export const MusicControl = ({
     setDuration(0);
   }, [currentSong?.id]);
 
+  // Handle audio timeupdate and metadata loading
   useEffect(() => {
     if (!audio) return;
 
@@ -91,6 +95,7 @@ export const MusicControl = ({
     };
   }, [audio, isDragging]);
 
+  // Handle volume changes
   const handleVolumeChange = useCallback((value: number[]) => {
     if (!audio) return;
     try {
@@ -103,6 +108,7 @@ export const MusicControl = ({
     }
   }, [audio]);
 
+  // Handle seeking during playback
   const handleSeek = useCallback((value: number[]) => {
     if (!audio) return;
     try {
@@ -116,6 +122,7 @@ export const MusicControl = ({
     }
   }, [audio, duration]);
 
+  // Handle seek operation completion
   const handleSeekCommit = useCallback(() => {
     if (!audio) return;
     try {
@@ -131,6 +138,7 @@ export const MusicControl = ({
     }
   }, [audio, progress, duration]);
 
+  // Toggle mute state
   const toggleMute = () => {
     if (!audio) return;
     if (isMuted) {
@@ -142,11 +150,12 @@ export const MusicControl = ({
     }
   };
 
+  // Progress bar hover preview
   const handleProgressHover = useCallback((previewTime: number | null) => {
     setShowTimePreview(previewTime);
   }, []);
 
-  // Error effect
+  // Error message timeout
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => setError(null), 3000);
@@ -183,34 +192,15 @@ export const MusicControl = ({
   return (
     <>
       <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] shadow-lg p-2 md:p-4 z-50">
-        {error && (
-          <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-sm py-1 px-4 text-center transform -translate-y-full">
-            {error}
-          </div>
-        )}
+        <ErrorMessage message={error} />
         <div className="container mx-auto relative">
           {/* Drawer Toggle Button */}
-          <div 
-            className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 cursor-pointer"
-            onClick={() => setDrawerOpen(true)}
-          >
-            <div className="bg-[#282828] p-1 rounded-full hover:bg-[#3E3E3E] transition-colors">
-              <ChevronUp className="h-5 w-5 text-white" />
-            </div>
-          </div>
+          <DrawerToggle onClick={() => setDrawerOpen(true)} />
           
           {/* Main wrapper - Changed to vertical layout on mobile */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
             {/* Left section - Song info */}
-            <div className="flex items-center justify-center space-x-4 w-full md:w-1/4">
-              <div className="w-12 h-12 md:w-14 md:h-14 bg-[#282828] rounded flex items-center justify-center">
-                <div className="text-xl md:text-2xl text-gray-400">🎵</div>
-              </div>
-              <div className="min-w-0 text-center md:text-left">
-                <h3 className="font-semibold text-sm text-white truncate">{currentSong.title}</h3>
-                <p className="text-xs text-gray-400 truncate">{currentSong.artist}</p>
-              </div>
-            </div>
+            <SongInfo title={currentSong.title} artist={currentSong.artist} />
 
             {/* Center section - Player controls */}
             <div className="flex flex-col items-center w-full md:w-2/4">
@@ -229,15 +219,30 @@ export const MusicControl = ({
               </div>
 
               {/* Progress bar */}
-              <ProgressBar
-                currentTime={currentTime}
-                duration={duration}
-                progress={progress}
-                onSeek={handleSeek}
-                onSeekCommit={handleSeekCommit}
-                onProgressHover={handleProgressHover}
-                showTimePreview={showTimePreview}
-              />
+              <div className="w-full flex items-center gap-2">
+                <TimeDisplay currentTime={currentTime} duration={duration} />
+                <div
+                  className="relative flex-1"
+                  onMouseMove={(e) => {
+                    if (!onProgressHover) return;
+                    const bounds = e.currentTarget.getBoundingClientRect();
+                    const percent = ((e.clientX - bounds.left) / bounds.width) * 100;
+                    const previewTime = (percent / 100) * duration;
+                    handleProgressHover(previewTime);
+                  }}
+                  onMouseLeave={() => handleProgressHover(null)}
+                >
+                  <ProgressBar
+                    currentTime={currentTime}
+                    duration={duration}
+                    progress={progress}
+                    onSeek={handleSeek}
+                    onSeekCommit={handleSeekCommit}
+                    onProgressHover={handleProgressHover}
+                    showTimePreview={showTimePreview}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Right section - Volume control */}

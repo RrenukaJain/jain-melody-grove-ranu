@@ -11,6 +11,7 @@ import {
 import { PlaybackControls } from "./PlaybackControls";
 import { ProgressBar } from "./ProgressBar";
 import { VolumeControl } from "./VolumeControl";
+import { formatTime } from "./utils/formatTime";
 
 interface SongDrawerProps {
   open: boolean;
@@ -158,12 +159,4 @@ export const SongDrawer = ({
       </DrawerContent>
     </Drawer>
   );
-};
-
-// Helper function for time formatting
-const formatTime = (time: number) => {
-  if (!isFinite(time)) return "0:00";
-  const minutes = Math.floor(time / 60);
-  const seconds = Math.floor(time % 60);
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
