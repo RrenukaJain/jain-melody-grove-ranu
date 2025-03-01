@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { PlaybackControls } from "./PlaybackControls";
 import { ProgressBar } from "./ProgressBar";
@@ -224,7 +223,7 @@ export const MusicControl = ({
                 <div
                   className="relative flex-1"
                   onMouseMove={(e) => {
-                    if (!onProgressHover) return;
+                    if (!handleProgressHover) return;
                     const bounds = e.currentTarget.getBoundingClientRect();
                     const percent = ((e.clientX - bounds.left) / bounds.width) * 100;
                     const previewTime = (percent / 100) * duration;
