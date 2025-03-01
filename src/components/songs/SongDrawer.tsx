@@ -68,7 +68,7 @@ export const SongDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="bg-[#121212] text-white border-t border-[#282828]">
+      <DrawerContent className="bg-[#121212] text-white border-t border-[#282828] max-h-[90vh]">
         <div className="mx-auto w-full max-w-4xl">
           <DrawerHeader className="text-center pb-2">
             <div className="flex justify-center my-1">
@@ -83,7 +83,7 @@ export const SongDrawer = ({
             <DrawerDescription className="text-gray-400 text-base">{currentSong.artist}</DrawerDescription>
           </DrawerHeader>
           
-          <div className="px-4 py-2">
+          <div className="px-4 py-2 overflow-y-auto">
             {/* Album Art / Visualization - Made smaller */}
             <div className="flex justify-center mb-5">
               <div className="w-40 h-40 md:w-48 md:h-48 bg-[#282828] rounded-lg flex items-center justify-center">

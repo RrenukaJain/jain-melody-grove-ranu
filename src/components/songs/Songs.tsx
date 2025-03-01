@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,11 +13,19 @@ interface SongsProps {
   featured?: boolean;
   ref?: React.RefObject<{
     handlePlaySong: (songId: string) => void;
+    isPlaying: () => boolean;
+    getCurrentlyPlayingSongId: () => string | null;
+    togglePlayPause: () => void;
   }>;
 }
 
 export const Songs = forwardRef<
-  { handlePlaySong: (songId: string) => void },
+  { 
+    handlePlaySong: (songId: string) => void;
+    isPlaying: () => boolean;
+    getCurrentlyPlayingSongId: () => string | null;
+    togglePlayPause: () => void;
+  },
   SongsProps
 >(({ searchQuery = "", categoryFilter = null, featured = false }, ref) => {
   const {
@@ -213,19 +222,20 @@ export const Songs = forwardRef<
         ))}
       </div>
 
-      <MusicControl
-        currentSong={getCurrentSong()}
-        audio={audioRef}
-        onPlayPause={handleControlPlayPause}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
-        isPlaying={isPlaying}
-        onToggleShuffle={handleToggleShuffle}
-        onToggleRepeat={handleToggleRepeat}
-        isShuffleOn={isShuffleOn}
-        isRepeatOn={isRepeatOn}
-      />
+      {(isPlaying || currentlyPlaying) && (
+        <MusicControl
+          currentSong={getCurrentSong()}
+          audio={audioRef}
+          onPlayPause={handleControlPlayPause}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+          isPlaying={isPlaying}
+          onToggleShuffle={handleToggleShuffle}
+          onToggleRepeat={handleToggleRepeat}
+          isShuffleOn={isShuffleOn}
+          isRepeatOn={isRepeatOn}
+        />
+      )}
     </div>
   );
-}
-);
+});

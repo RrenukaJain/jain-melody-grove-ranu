@@ -1,15 +1,22 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/navigation/Navbar";
 import { Songs } from "@/components/songs/Songs";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Collection = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+
+  // Ref to control the Songs component
+  const songsRef = useRef<{
+    handlePlaySong: (songId: string) => void;
+    isPlaying: () => boolean;
+    getCurrentlyPlayingSongId: () => string | null;
+    togglePlayPause: () => void;
+  }>(null);
 
   const { data: categories } = useQuery({
     queryKey: ['song-categories'],
@@ -46,12 +53,20 @@ const Collection = () => {
           </TabsList>
 
           <TabsContent value="all">
-            <Songs searchQuery={searchQuery} categoryFilter={null} />
+            <Songs 
+              ref={songsRef}
+              searchQuery={searchQuery} 
+              categoryFilter={null} 
+            />
           </TabsContent>
           
           {categories?.map((category) => (
             <TabsContent key={category} value={category}>
-              <Songs searchQuery={searchQuery} categoryFilter={category} />
+              <Songs 
+                ref={songsRef}
+                searchQuery={searchQuery} 
+                categoryFilter={category} 
+              />
             </TabsContent>
           ))}
         </Tabs>
