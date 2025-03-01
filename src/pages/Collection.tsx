@@ -1,14 +1,20 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/navigation/Navbar";
 import { Songs } from "@/components/songs/Songs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MusicControl } from "@/components/songs/MusicControl";
+import { MusicPlayerProvider, useMusicPlayer } from "@/components/songs/context/MusicPlayerContext";
 
-const Collection = () => {
+// Inner component that uses the music player context
+const CollectionContent = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const { currentlyPlaying, isPlaying, currentSongData, audioRef, isLoadingSong, 
+    handleControlPlayPause, handleNext, handlePrevious, 
+    isShuffleOn, isRepeatOn, handleToggleShuffle, handleToggleRepeat } = useMusicPlayer();
 
   // Ref to control the Songs component
   const songsRef = useRef<{
@@ -34,7 +40,7 @@ const Collection = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#121212]">
+    <div className="min-h-screen bg-[#121212] pb-32">
       <Navbar onSearch={setSearchQuery} />
       <main className="pt-24 container mx-auto px-4">
         <div className="mb-8">
@@ -71,7 +77,34 @@ const Collection = () => {
           ))}
         </Tabs>
       </main>
+
+      {/* Music Control - always visible when playing */}
+      {(isPlaying || currentlyPlaying) && currentSongData && (
+        <div className="fixed bottom-0 left-0 right-0 z-50">
+          <MusicControl
+            currentSong={currentSongData}
+            audio={audioRef}
+            onPlayPause={handleControlPlayPause}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+            isPlaying={isPlaying}
+            onToggleShuffle={handleToggleShuffle}
+            onToggleRepeat={handleToggleRepeat}
+            isShuffleOn={isShuffleOn}
+            isRepeatOn={isRepeatOn}
+          />
+        </div>
+      )}
     </div>
+  );
+};
+
+// Wrapper component with the provider
+const Collection = () => {
+  return (
+    <MusicPlayerProvider>
+      <CollectionContent />
+    </MusicPlayerProvider>
   );
 };
 

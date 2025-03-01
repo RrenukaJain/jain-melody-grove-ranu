@@ -1,12 +1,11 @@
 
-import { useImperativeHandle, forwardRef } from "react";
+import { useImperativeHandle, forwardRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SongCard } from "./SongCard";
-import { MusicControl } from "./MusicControl";
 import { Song } from "./types";
-import { useSongsPlayer } from "./hooks/useSongsPlayer";
 import { useSongFilters } from "./hooks/useSongFilters";
+import { useMusicPlayer } from "./context/MusicPlayerContext";
 
 interface SongsProps {
   searchQuery?: string;
@@ -54,23 +53,30 @@ export const Songs = forwardRef<
     },
   });
 
-  // Use custom hooks for player and filters
-  const {
-    currentlyPlaying,
-    isPlaying,
-    isLoadingSong,
-    audioRef,
-    isShuffleOn,
-    isRepeatOn,
+  // Use global music player context
+  const { 
+    currentlyPlaying, 
+    isPlaying, 
+    isLoadingSong, 
     handlePlayPause,
-    handleToggleShuffle,
-    handleToggleRepeat,
-    handleNext,
-    handlePrevious,
-    getCurrentSong,
-    handleControlPlayPause
-  } = useSongsPlayer(songs);
+    setAllSongs
+  } = useMusicPlayer();
 
+  // Update the global songs list when songs change
+  useEffect(() => {
+    if (songs && songs.length > 0) {
+      setAllSongs(prev => {
+        // Merge with previous songs, removing duplicates
+        const songMap = new Map();
+        [...prev, ...songs].forEach(song => {
+          songMap.set(song.id, song);
+        });
+        return Array.from(songMap.values());
+      });
+    }
+  }, [songs, setAllSongs]);
+
+  // Use custom hook for filters
   const { filteredSongs } = useSongFilters(songs, searchQuery, categoryFilter);
 
   // Expose functions through ref
@@ -80,15 +86,13 @@ export const Songs = forwardRef<
       const songIndex = songs.findIndex(song => song.id === songId);
       if (songIndex !== -1) {
         const song = songs[songIndex];
-        handlePlayPause(song.id, song.file_url, songIndex);
+        handlePlayPause(song.id, song.file_url, songIndex, songs);
       }
     },
     isPlaying: () => isPlaying,
     getCurrentlyPlayingSongId: () => currentlyPlaying,
     togglePlayPause: () => {
-      if (audioRef) {
-        handleControlPlayPause();
-      }
+      // Will be implemented by the context
     }
   }));
 
@@ -97,7 +101,7 @@ export const Songs = forwardRef<
   }
 
   return (
-    <div className={`container mx-auto px-4 py-8 ${!featured ? 'mb-32' : ''}`}>
+    <div className={`container mx-auto px-4 py-8 ${!featured ? 'mb-8' : ''}`}>
       {!featured && <h2 className="text-2xl font-bold mb-6 text-white">
         {categoryFilter ? `${categoryFilter} Songs` : 'All Songs'}
       </h2>}
@@ -111,25 +115,10 @@ export const Songs = forwardRef<
             isPlaying={isPlaying}
             isLoading={isLoadingSong}
             currentlyPlaying={currentlyPlaying}
-            onPlayPause={handlePlayPause}
+            onPlayPause={(songId, fileUrl, idx) => handlePlayPause(songId, fileUrl, idx, songs)}
           />
         ))}
       </div>
-
-      {(isPlaying || currentlyPlaying) && (
-        <MusicControl
-          currentSong={getCurrentSong()}
-          audio={audioRef}
-          onPlayPause={handleControlPlayPause}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-          isPlaying={isPlaying}
-          onToggleShuffle={handleToggleShuffle}
-          onToggleRepeat={handleToggleRepeat}
-          isShuffleOn={isShuffleOn}
-          isRepeatOn={isRepeatOn}
-        />
-      )}
     </div>
   );
 });

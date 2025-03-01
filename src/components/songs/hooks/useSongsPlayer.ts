@@ -22,7 +22,7 @@ export const useSongsPlayer = (songs: Song[] = []) => {
 
   // Initialize shuffled indices when songs change
   useEffect(() => {
-    if (songs) {
+    if (songs && songs.length > 0) {
       setShuffledIndices(Array.from({ length: songs.length }, (_, i) => i));
     }
   }, [songs]);
@@ -40,7 +40,7 @@ export const useSongsPlayer = (songs: Song[] = []) => {
   // Handle shuffle toggle
   const handleToggleShuffle = useCallback(() => {
     setIsShuffleOn(prev => {
-      if (!prev && songs) {
+      if (!prev && songs && songs.length > 0) {
         setShuffledIndices(shuffleArray(Array.from({ length: songs.length }, (_, i) => i)));
       }
       return !prev;
@@ -71,14 +71,16 @@ export const useSongsPlayer = (songs: Song[] = []) => {
 
   // Preload adjacent songs
   useEffect(() => {
-    if (songs && currentSongIndex !== -1) {
+    if (songs && songs.length > 0 && currentSongIndex !== -1) {
       preloadAdjacentSongs(songs, currentSongIndex);
     }
   }, [currentSongIndex, songs, preloadAdjacentSongs]);
 
   // Get next song index based on shuffle state
   const getNextIndex = useCallback(() => {
-    if (!songs) return -1;
+    if (!songs || songs.length === 0) return -1;
+    if (currentSongIndex === -1) return 0;
+    
     if (isShuffleOn) {
       const currentShuffleIndex = shuffledIndices.indexOf(currentSongIndex);
       return shuffledIndices[(currentShuffleIndex + 1) % songs.length];
@@ -88,7 +90,9 @@ export const useSongsPlayer = (songs: Song[] = []) => {
 
   // Get previous song index based on shuffle state
   const getPreviousIndex = useCallback(() => {
-    if (!songs) return -1;
+    if (!songs || songs.length === 0) return -1;
+    if (currentSongIndex === -1) return 0;
+    
     if (isShuffleOn) {
       const currentShuffleIndex = shuffledIndices.indexOf(currentSongIndex);
       return shuffledIndices[(currentShuffleIndex - 1 + songs.length) % songs.length];
@@ -98,33 +102,45 @@ export const useSongsPlayer = (songs: Song[] = []) => {
 
   // Handle playing next song
   const handleNext = useCallback(() => {
-    if (!songs || currentSongIndex === -1) return;
+    if (!songs || songs.length === 0 || currentSongIndex === -1) return;
     const nextIndex = getNextIndex();
+    if (nextIndex === -1) return;
+    
     const nextSong = songs[nextIndex];
-    handlePlayPause(nextSong.id, nextSong.file_url, nextIndex);
+    if (nextSong) {
+      handlePlayPause(nextSong.id, nextSong.file_url, nextIndex);
+    }
   }, [songs, currentSongIndex, getNextIndex, handlePlayPause]);
 
   // Handle playing previous song
   const handlePrevious = useCallback(() => {
-    if (!songs || currentSongIndex === -1) return;
+    if (!songs || songs.length === 0 || currentSongIndex === -1) return;
     const prevIndex = getPreviousIndex();
+    if (prevIndex === -1) return;
+    
     const prevSong = songs[prevIndex];
-    handlePlayPause(prevSong.id, prevSong.file_url, prevIndex);
+    if (prevSong) {
+      handlePlayPause(prevSong.id, prevSong.file_url, prevIndex);
+    }
   }, [songs, currentSongIndex, getPreviousIndex, handlePlayPause]);
 
   // Get current song
   const getCurrentSong = useCallback(() => {
-    if (!songs || currentSongIndex === -1) return null;
+    if (!songs || songs.length === 0 || currentSongIndex === -1) return null;
     return songs[currentSongIndex];
   }, [songs, currentSongIndex]);
 
   // Handle play/pause from control bar
   const handleControlPlayPause = useCallback(() => {
+    if (!audioRef) return;
+    
     if (isPlaying) {
-      audioRef?.pause();
+      audioRef.pause();
       setIsPlaying(false);
     } else {
-      audioRef?.play();
+      audioRef.play().catch(error => {
+        console.error("Error playing audio:", error);
+      });
       setIsPlaying(true);
     }
   }, [audioRef, isPlaying, setIsPlaying]);
