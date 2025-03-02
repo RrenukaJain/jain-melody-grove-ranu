@@ -1,10 +1,21 @@
 
 import { useState } from "react";
-import { Home, Search, Library, Menu } from "lucide-react";
+import { Home, Search, Library, Menu, LogOut, LogIn, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface NavbarProps {
   onSearch: (query: string) => void;
@@ -13,11 +24,27 @@ interface NavbarProps {
 export const Navbar = ({ onSearch }: NavbarProps) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { user, signOut, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
     onSearch(query);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Logged out successfully");
+      navigate("/");
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
+  };
+
+  const handleLogin = () => {
+    navigate("/auth");
   };
 
   return (
@@ -34,12 +61,38 @@ export const Navbar = ({ onSearch }: NavbarProps) => {
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] bg-[#121212] border-r border-white/10">
                 <div className="flex flex-col space-y-4 mt-6">
-                  <NavItem icon={<Home className="h-5 w-5" />} label="Home" active />
-                  <NavItem icon={<Library className="h-5 w-5" />} label="Library" />
+                  <Link to="/">
+                    <NavItem icon={<Home className="h-5 w-5" />} label="Home" active={window.location.pathname === "/"} />
+                  </Link>
+                  <Link to="/collection">
+                    <NavItem icon={<Library className="h-5 w-5" />} label="Library" active={window.location.pathname === "/collection"} />
+                  </Link>
+                  
+                  {isAuthenticated ? (
+                    <Button
+                      variant="ghost"
+                      className="flex items-center justify-start space-x-2 w-full"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span>Logout</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      className="flex items-center justify-start space-x-2 w-full"
+                      onClick={handleLogin}
+                    >
+                      <LogIn className="h-5 w-5" />
+                      <span>Sign In</span>
+                    </Button>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
-            <span className="hidden sm:inline ml-2 text-lg font-semibold">Jain Melody Grove</span>
+            <Link to="/" className="ml-2">
+              <span className="hidden sm:inline text-lg font-semibold">Jain Melody Grove</span>
+            </Link>
           </div>
 
           {/* Center section with search - always visible */}
@@ -58,15 +111,42 @@ export const Navbar = ({ onSearch }: NavbarProps) => {
           
           {/* Right section - desktop navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            <NavItem icon={<Home className="h-5 w-5" />} label="Home" active />
-            <NavItem icon={<Library className="h-5 w-5" />} label="Library" />
+            <Link to="/">
+              <NavItem icon={<Home className="h-5 w-5" />} label="Home" active={window.location.pathname === "/"} />
+            </Link>
+            <Link to="/collection">
+              <NavItem icon={<Library className="h-5 w-5" />} label="Library" active={window.location.pathname === "/collection"} />
+            </Link>
           </div>
 
-          {/* Sign in button */}
+          {/* Sign in/out button */}
           <div className="flex items-center">
-            <Button variant="ghost" size="sm" className="text-sm whitespace-nowrap">
-              Sign In
-            </Button>
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="rounded-full">
+                    <User className="h-5 w-5 mr-2" />
+                    <span className="hidden md:inline">{user?.email?.split('@')[0]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-[#262626] border-none text-white" align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-gray-700" />
+                  <DropdownMenuItem 
+                    className="cursor-pointer hover:bg-[#333]"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="ghost" size="sm" className="text-sm whitespace-nowrap" onClick={handleLogin}>
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
       </div>

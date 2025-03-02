@@ -1,7 +1,11 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PlayCircle, PauseCircle, Loader2, Disc } from "lucide-react";
 import { Song } from "./types";
+import { useAuth } from "@/context/AuthContext";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import LoginModal from "@/components/auth/LoginModal";
 
 interface SongCardProps {
   song: Song;
@@ -20,6 +24,21 @@ export const SongCard = ({
   currentlyPlaying,
   onPlayPause,
 }: SongCardProps) => {
+  const { isAuthenticated } = useAuth();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  const handlePlayClick = () => {
+    if (isAuthenticated) {
+      onPlayPause(song.id, song.file_url, index);
+    } else {
+      setLoginModalOpen(true);
+    }
+  };
+
+  const handleCloseLoginModal = () => {
+    setLoginModalOpen(false);
+  };
+
   return (
     <div className="group bg-[#181818] rounded-lg p-3 hover:bg-[#282828] transition-all duration-300 relative overflow-hidden flex items-center gap-4">
       {/* Album Art Container - Smaller size */}
@@ -36,29 +55,38 @@ export const SongCard = ({
           </div>
         )}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`
-            absolute inset-0 
-            w-full h-full
-            text-[#1DB954] hover:text-[#1ed760]
-            opacity-0 group-hover:opacity-100 
-            transition-all duration-300
-            bg-black/40 hover:bg-black/60
-            ${currentlyPlaying === song.id ? 'opacity-100' : ''}
-          `}
-          onClick={() => onPlayPause(song.id, song.file_url, index)}
-          disabled={isLoading && currentlyPlaying !== song.id}
-        >
-          {isLoading && currentlyPlaying === song.id ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
-          ) : currentlyPlaying === song.id ? (
-            <PauseCircle className="h-6 w-6" />
-          ) : (
-            <PlayCircle className="h-6 w-6" />
+        
+        <Dialog open={loginModalOpen} onOpenChange={setLoginModalOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`
+                absolute inset-0 
+                w-full h-full
+                text-[#1DB954] hover:text-[#1ed760]
+                opacity-0 group-hover:opacity-100 
+                transition-all duration-300
+                bg-black/40 hover:bg-black/60
+                ${currentlyPlaying === song.id ? 'opacity-100' : ''}
+              `}
+              onClick={isAuthenticated ? () => onPlayPause(song.id, song.file_url, index) : undefined}
+              disabled={isLoading && currentlyPlaying !== song.id}
+            >
+              {isLoading && currentlyPlaying === song.id ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : currentlyPlaying === song.id ? (
+                <PauseCircle className="h-6 w-6" />
+              ) : (
+                <PlayCircle className="h-6 w-6" />
+              )}
+            </Button>
+          </DialogTrigger>
+          
+          {!isAuthenticated && (
+            <LoginModal onClose={handleCloseLoginModal} songId={song.id} />
           )}
-        </Button>
+        </Dialog>
       </div>
 
       {/* Song Information */}
