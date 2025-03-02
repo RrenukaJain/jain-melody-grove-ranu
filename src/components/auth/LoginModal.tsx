@@ -31,6 +31,7 @@ const LoginModal = ({ onClose, songId }: LoginModalProps) => {
           routing="path" 
           path="/auth" 
           signUpUrl="/auth?tab=register"
+          afterSignInUrl={window.location.pathname}
           appearance={{
             elements: {
               rootBox: "w-full",

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { SignIn, SignUp, useClerk } from "@clerk/clerk-react";
+import { SignIn, SignUp, useUser } from "@clerk/clerk-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -12,17 +12,35 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState("login");
   const navigate = useNavigate();
   const location = useLocation();
-  const { session } = useClerk();
+  const { isLoaded, isSignedIn } = useUser();
+  
+  // Get search params for tab switching
+  const searchParams = new URLSearchParams(location.search);
+  const tabParam = searchParams.get('tab');
   
   // Get the redirect path from the location state, or default to "/"
   const from = location.state?.from || "/";
+  const songId = location.state?.songId;
+
+  // Set active tab based on URL parameter if available
+  useEffect(() => {
+    if (tabParam === 'register') {
+      setActiveTab('register');
+    }
+  }, [tabParam]);
 
   // Check if user is already logged in
   useEffect(() => {
-    if (session) {
+    if (isLoaded && isSignedIn) {
+      // If there's a songId in the state, include it in the toast
+      if (songId) {
+        toast.success("Successfully signed in! You can now play the song.");
+      } else {
+        toast.success("Successfully signed in!");
+      }
       navigate(from, { replace: true });
     }
-  }, [session, navigate, from]);
+  }, [isLoaded, isSignedIn, navigate, from, songId]);
 
   // Handle tab change
   const handleTabChange = (value: string) => {

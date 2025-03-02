@@ -13,7 +13,11 @@ export function ClerkProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ClerkProviderOriginal publishableKey={publishableKey}>
+    <ClerkProviderOriginal 
+      publishableKey={publishableKey}
+      afterSignInUrl="/"
+      afterSignUpUrl="/"
+    >
       {children}
     </ClerkProviderOriginal>
   );

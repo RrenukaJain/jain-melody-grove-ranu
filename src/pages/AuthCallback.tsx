@@ -1,15 +1,23 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
+import { toast } from "sonner";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const { isLoaded, isSignedIn } = useUser();
 
   useEffect(() => {
-    // Clerk will handle the authentication callback automatically
-    // We just need to redirect to home page
-    navigate("/", { replace: true });
-  }, [navigate]);
+    if (isLoaded) {
+      if (isSignedIn) {
+        toast.success("Successfully authenticated!");
+      }
+      
+      // Redirect to home page after authentication
+      navigate("/", { replace: true });
+    }
+  }, [isLoaded, isSignedIn, navigate]);
 
   return (
     <div className="min-h-screen bg-[#121212] flex items-center justify-center">
