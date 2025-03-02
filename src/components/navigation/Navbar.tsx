@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, SignedIn, SignedOut } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,6 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ onSearch }: NavbarProps) => {
-  const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { user, signOut, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -68,7 +67,7 @@ export const Navbar = ({ onSearch }: NavbarProps) => {
                     <NavItem icon={<Library className="h-5 w-5" />} label="Library" active={window.location.pathname === "/collection"} />
                   </Link>
                   
-                  {isAuthenticated ? (
+                  <SignedIn>
                     <Button
                       variant="ghost"
                       className="flex items-center justify-start space-x-2 w-full"
@@ -77,7 +76,9 @@ export const Navbar = ({ onSearch }: NavbarProps) => {
                       <LogOut className="h-5 w-5" />
                       <span>Logout</span>
                     </Button>
-                  ) : (
+                  </SignedIn>
+                  
+                  <SignedOut>
                     <Button
                       variant="ghost"
                       className="flex items-center justify-start space-x-2 w-full"
@@ -86,7 +87,7 @@ export const Navbar = ({ onSearch }: NavbarProps) => {
                       <LogIn className="h-5 w-5" />
                       <span>Sign In</span>
                     </Button>
-                  )}
+                  </SignedOut>
                 </div>
               </SheetContent>
             </Sheet>
@@ -121,12 +122,12 @@ export const Navbar = ({ onSearch }: NavbarProps) => {
 
           {/* Sign in/out button */}
           <div className="flex items-center">
-            {isAuthenticated ? (
+            <SignedIn>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="rounded-full">
                     <User className="h-5 w-5 mr-2" />
-                    <span className="hidden md:inline">{user?.email?.split('@')[0]}</span>
+                    <span className="hidden md:inline">{user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0]}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 bg-[#262626] border-none text-white" align="end">
@@ -141,12 +142,14 @@ export const Navbar = ({ onSearch }: NavbarProps) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
+            </SignedIn>
+            
+            <SignedOut>
               <Button variant="ghost" size="sm" className="text-sm whitespace-nowrap" onClick={handleLogin}>
                 <LogIn className="h-4 w-4 mr-2" />
                 Sign In
               </Button>
-            )}
+            </SignedOut>
           </div>
         </div>
       </div>

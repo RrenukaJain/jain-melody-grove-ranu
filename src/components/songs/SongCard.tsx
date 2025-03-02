@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PlayCircle, PauseCircle, Loader2, Disc } from "lucide-react";
 import { Song } from "./types";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, SignedIn, SignedOut } from "@/context/AuthContext";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import LoginModal from "@/components/auth/LoginModal";
 
@@ -70,7 +70,7 @@ export const SongCard = ({
                 bg-black/40 hover:bg-black/60
                 ${currentlyPlaying === song.id ? 'opacity-100' : ''}
               `}
-              onClick={isAuthenticated ? () => onPlayPause(song.id, song.file_url, index) : undefined}
+              onClick={handlePlayClick}
               disabled={isLoading && currentlyPlaying !== song.id}
             >
               {isLoading && currentlyPlaying === song.id ? (
@@ -83,9 +83,11 @@ export const SongCard = ({
             </Button>
           </DialogTrigger>
           
-          {!isAuthenticated && (
-            <LoginModal onClose={handleCloseLoginModal} songId={song.id} />
-          )}
+          <SignedOut>
+            {loginModalOpen && (
+              <LoginModal onClose={handleCloseLoginModal} songId={song.id} />
+            )}
+          </SignedOut>
         </Dialog>
       </div>
 

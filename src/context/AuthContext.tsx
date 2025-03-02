@@ -1,11 +1,16 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
+import { createContext, useContext, ReactNode } from "react";
+import { 
+  useUser, 
+  useAuth as useClerkAuth, 
+  useClerk,
+  SignedIn,
+  SignedOut 
+} from "@clerk/clerk-react";
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: any | null;
+  session: any | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
@@ -14,52 +19,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        setIsLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error("Error getting initial auth session:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
-
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const { isLoaded: isSessionLoaded } = useClerkAuth();
+  const { signOut } = useClerk();
+  
+  const isLoading = !isUserLoaded || !isSessionLoaded;
+  
+  // Clerk doesn't expose the session directly like Supabase does,
+  // but we can maintain the same interface for compatibility
   const value = {
-    user,
-    session,
+    user: user,
+    session: user ? { user } : null,
     isLoading,
     signOut,
     isAuthenticated: !!user,
@@ -75,3 +45,6 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Export these for convenience when building UI components
+export { SignedIn, SignedOut };

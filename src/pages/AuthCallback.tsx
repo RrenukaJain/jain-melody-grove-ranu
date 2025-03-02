@@ -1,24 +1,14 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      const { error } = await supabase.auth.getSession();
-      
-      // Redirect to home page regardless of result
-      navigate("/", { replace: true });
-      
-      if (error) {
-        console.error("Error during auth callback:", error);
-      }
-    };
-
-    handleAuthCallback();
+    // Clerk will handle the authentication callback automatically
+    // We just need to redirect to home page
+    navigate("/", { replace: true });
   }, [navigate]);
 
   return (
