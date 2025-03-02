@@ -6,10 +6,9 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { Songs } from "@/components/songs/Songs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MusicControl } from "@/components/songs/MusicControl";
-import { MusicPlayerProvider, useMusicPlayer } from "@/components/songs/context/MusicPlayerContext";
+import { useMusicPlayer } from "@/components/songs/context/MusicPlayerContext";
 
-// Inner component that uses the music player context
-const CollectionContent = () => {
+const Collection = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const { currentlyPlaying, isPlaying, currentSongData, audioRef, isLoadingSong, 
@@ -96,15 +95,6 @@ const CollectionContent = () => {
         </div>
       )}
     </div>
-  );
-};
-
-// Wrapper component with the provider
-const Collection = () => {
-  return (
-    <MusicPlayerProvider>
-      <CollectionContent />
-    </MusicPlayerProvider>
   );
 };
 
