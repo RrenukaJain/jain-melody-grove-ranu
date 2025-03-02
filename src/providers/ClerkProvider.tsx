@@ -15,8 +15,10 @@ export function ClerkProvider({ children }: { children: ReactNode }) {
   return (
     <ClerkProviderOriginal 
       publishableKey={publishableKey}
-      afterSignInUrl="/"
-      afterSignUpUrl="/"
+      // Replace deprecated redirectUrl props with the new ones
+      fallbackRedirectUrl="/auth/callback"
+      signInUrl="/auth?tab=login"
+      signUpUrl="/auth?tab=register"
     >
       {children}
     </ClerkProviderOriginal>
