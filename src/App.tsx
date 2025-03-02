@@ -25,6 +25,7 @@ function App() {
                 <Route path="/collection" element={<Collection />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/auth/verify-email-address" element={<AuthCallback />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Toaster />

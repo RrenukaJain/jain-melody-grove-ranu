@@ -15,10 +15,12 @@ const AuthCallback = () => {
 
   useEffect(() => {
     console.log("Auth callback path:", pathName);
+    console.log("Is verify email path:", isVerifyEmailPath);
     
     if (isLoaded) {
       // Handle email verification flow
       if (isVerifyEmailPath) {
+        console.log("Handling email verification flow");
         // This is the email verification flow, show appropriate message
         toast.success("Please check your email to complete verification");
         // Don't redirect immediately for verification flow
