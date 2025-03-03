@@ -33,8 +33,6 @@ const LoginModal = ({ onClose, songId }: LoginModalProps) => {
           signUpUrl="/auth?tab=register"
           afterSignInUrl={window.location.pathname}
           redirectUrl="/auth/callback"
-          // Using correct SSO property
-          socialButtonsPlacement="bottom"
           appearance={{
             elements: {
               rootBox: "w-full",

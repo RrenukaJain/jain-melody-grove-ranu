@@ -64,7 +64,6 @@ const Auth = () => {
                 signUpUrl="/auth?tab=register"
                 afterSignInUrl={from}
                 redirectUrl="/auth/callback"
-                socialButtonsPlacement="bottom"
                 appearance={{
                   elements: {
                     rootBox: "w-full",
@@ -98,7 +97,6 @@ const Auth = () => {
                 signInUrl="/auth?tab=login"
                 redirectUrl="/auth/callback"
                 afterSignUpUrl="/"
-                socialButtonsPlacement="bottom"
                 appearance={{
                   elements: {
                     rootBox: "w-full",
