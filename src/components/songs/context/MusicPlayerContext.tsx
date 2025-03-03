@@ -1,3 +1,4 @@
+
 import { 
   createContext, 
   useContext, 
@@ -6,7 +7,7 @@ import {
   useEffect,
   ReactNode 
 } from "react";
-import { Song } from "../songs/types";
+import { Song } from "../types";
 import { toast } from "sonner";
 import { usePlaylists } from "@/components/playlists/context/PlaylistsContext";
 

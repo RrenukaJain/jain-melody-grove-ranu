@@ -9,7 +9,6 @@ import {
   DialogTitle, 
   DialogTrigger,
   DialogFooter,
-  DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,11 +127,13 @@ export const PlaylistsList = () => {
               </div>
               
               <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline" className="border-gray-700 text-white hover:bg-[#3a3a3a]">
-                    Cancel
-                  </Button>
-                </DialogClose>
+                <Button 
+                  variant="outline" 
+                  className="border-gray-700 text-white hover:bg-[#3a3a3a]"
+                  onClick={() => setCreateDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
                 <Button 
                   onClick={handleCreatePlaylist} 
                   className="bg-[#1DB954] hover:bg-[#1ed760] text-black"
@@ -225,11 +226,13 @@ export const PlaylistsList = () => {
             </div>
             
             <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" className="border-gray-700 text-white hover:bg-[#3a3a3a]">
-                  Cancel
-                </Button>
-              </DialogClose>
+              <Button 
+                variant="outline" 
+                className="border-gray-700 text-white hover:bg-[#3a3a3a]"
+                onClick={() => setEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button 
                 onClick={handleEditPlaylist} 
                 className="bg-[#1DB954] hover:bg-[#1ed760] text-black"
@@ -253,11 +256,13 @@ export const PlaylistsList = () => {
             </div>
             
             <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" className="border-gray-700 text-white hover:bg-[#3a3a3a]">
-                  Cancel
-                </Button>
-              </DialogClose>
+              <Button 
+                variant="outline" 
+                className="border-gray-700 text-white hover:bg-[#3a3a3a]"
+                onClick={() => setDeleteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button 
                 onClick={handleDeletePlaylist} 
                 className="bg-red-600 hover:bg-red-700 text-white"

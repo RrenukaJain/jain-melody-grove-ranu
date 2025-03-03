@@ -1,3 +1,4 @@
+
 import {
   Sheet,
   SheetContent,
@@ -55,7 +56,7 @@ export function SongDrawer({ song }: SongDrawerProps) {
           <div>
             <h3 className="text-lg font-semibold">Description</h3>
             <p className="text-gray-400">
-              {song.description || "No description available."}
+              No description available.
             </p>
           </div>
         </div>

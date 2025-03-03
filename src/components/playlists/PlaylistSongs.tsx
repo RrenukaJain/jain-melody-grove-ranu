@@ -4,7 +4,7 @@ import { usePlaylists } from "./context/PlaylistsContext";
 import { useAuth } from "@/context/AuthContext";
 import { SongCard } from "../songs/SongCard";
 import { useMusicPlayer } from "../songs/context/MusicPlayerContext";
-import { PlayCircle, PauseCircle, Info, ListMusic, DragVertical } from "lucide-react";
+import { PlayCircle, PauseCircle, Info, ListMusic, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Song } from "../songs/types";
 
@@ -104,7 +104,7 @@ export const PlaylistSongs = () => {
                   {index + 1}
                 </div>
                 <div className="w-8 flex-shrink-0 text-gray-500 hidden group-hover:flex justify-center mr-2">
-                  <DragVertical className="h-5 w-5" />
+                  <GripVertical className="h-5 w-5" />
                 </div>
                 <div className="flex-grow">
                   <SongCard
