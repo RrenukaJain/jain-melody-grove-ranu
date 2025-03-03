@@ -1,11 +1,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, PauseCircle, Loader2, Disc } from "lucide-react";
+import { PlayCircle, PauseCircle, Loader2, Disc, Plus, Trash2 } from "lucide-react";
 import { Song } from "./types";
 import { useAuth, SignedIn, SignedOut } from "@/context/AuthContext";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import LoginModal from "@/components/auth/LoginModal";
+import { PlaylistAddButton } from "../playlists/PlaylistAddButton";
 
 interface SongCardProps {
   song: Song;
@@ -14,6 +15,8 @@ interface SongCardProps {
   isLoading: boolean;
   currentlyPlaying: string | null;
   onPlayPause: (songId: string, fileUrl: string, index: number) => void;
+  onRemove?: (songId: string) => void;
+  inPlaylist?: boolean;
 }
 
 export const SongCard = ({
@@ -23,6 +26,8 @@ export const SongCard = ({
   isLoading,
   currentlyPlaying,
   onPlayPause,
+  onRemove,
+  inPlaylist = false,
 }: SongCardProps) => {
   const { isAuthenticated } = useAuth();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -99,6 +104,26 @@ export const SongCard = ({
         <p className="text-xs text-gray-400 truncate">
           {song.artist}
         </p>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex items-center gap-1">
+        {/* Add to playlist button */}
+        {!inPlaylist && (
+          <PlaylistAddButton songId={song.id} minimal />
+        )}
+        
+        {/* Remove from playlist button (only shown when in playlist view) */}
+        {inPlaylist && onRemove && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-gray-400 hover:text-white hover:bg-[#3a3a3a] opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => onRemove(song.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Duration */}
