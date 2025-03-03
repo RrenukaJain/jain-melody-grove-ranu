@@ -64,8 +64,8 @@ const AuthCallback = () => {
       // Check if we have pending verification
       if (!client.signUp.status || client.signUp.status === "complete") {
         // Try to get the attempt from the email verification process
-        const verifications = await client.verifyEmail({ code: verificationCode });
-        console.log("Verification result:", verifications);
+        await client.signUp.attemptEmailAddressVerification({ code: verificationCode });
+        console.log("Email verification successful");
         
         toast.success("Email verified successfully!");
         navigate("/", { replace: true });
