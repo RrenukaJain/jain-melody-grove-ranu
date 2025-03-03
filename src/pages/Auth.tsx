@@ -64,8 +64,6 @@ const Auth = () => {
                 signUpUrl="/auth?tab=register"
                 afterSignInUrl={from}
                 redirectUrl="/auth/callback"
-                // Set specifically for SSO callbacks
-                afterSocialSignInUrl="/"
                 socialButtonsPlacement="bottom"
                 appearance={{
                   elements: {
@@ -99,8 +97,7 @@ const Auth = () => {
                 path="/auth" 
                 signInUrl="/auth?tab=login"
                 redirectUrl="/auth/callback"
-                // Set specifically for SSO callbacks
-                afterSocialSignUpUrl="/"
+                afterSignUpUrl="/"
                 socialButtonsPlacement="bottom"
                 appearance={{
                   elements: {

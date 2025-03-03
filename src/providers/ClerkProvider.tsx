@@ -20,7 +20,7 @@ export function ClerkProvider({ children }: { children: ReactNode }) {
       signUpUrl="/auth?tab=register"
       afterSignInUrl="/"
       afterSignUpUrl="/"
-      signInFallbackUrl="/auth/callback"
+      redirectUrl="/auth/callback"
     >
       {children}
     </ClerkProviderOriginal>
