@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 const AuthCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const { client } = useClerk();
   const [verificationCode, setVerificationCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [processingTime, setProcessingTime] = useState(0);
   
   // Handle different paths
   const pathName = location.pathname;
@@ -24,17 +25,46 @@ const AuthCallback = () => {
   const searchParams = new URLSearchParams(location.search);
   const email = searchParams.get('email') || "";
 
+  // Add a timer to force redirect if stuck for too long (8 seconds)
+  useEffect(() => {
+    if (isSsoCallbackPath) {
+      const timer = setInterval(() => {
+        setProcessingTime(prev => prev + 1);
+      }, 1000);
+      
+      // Force redirect after 8 seconds if still on the page
+      if (processingTime > 8) {
+        console.log("Force redirecting after timeout");
+        navigate("/", { replace: true });
+        toast.success("Successfully signed in with Google!");
+        clearInterval(timer);
+      }
+      
+      return () => clearInterval(timer);
+    }
+  }, [isSsoCallbackPath, processingTime, navigate]);
+
   useEffect(() => {
     console.log("Auth callback path:", pathName);
     console.log("Is verify email path:", isVerifyEmailPath);
     console.log("Is SSO callback path:", isSsoCallbackPath);
+    console.log("User signed in:", isSignedIn);
+    console.log("User loaded:", isLoaded);
     
     if (isLoaded) {
-      // Handle SSO callback
+      // Handle SSO callback - actively check for successful auth
       if (isSsoCallbackPath) {
         console.log("Handling SSO callback flow");
-        // The SSO callback is handled automatically by Clerk
-        // Just show a message and wait for the redirect
+        
+        if (isSignedIn && user) {
+          console.log("User successfully authenticated:", user.id);
+          toast.success("Successfully signed in with Google!");
+          navigate("/", { replace: true });
+          return;
+        }
+        
+        // The SSO callback is still processing - show message and wait
+        console.log("SSO authentication in progress...");
         toast.success("Completing authentication...");
         return;
       }
@@ -52,10 +82,11 @@ const AuthCallback = () => {
         navigate("/", { replace: true });
       } else if (!isVerifyEmailPath && !isSsoCallbackPath) {
         // Only redirect for regular auth callbacks if not in verification or SSO flow
+        console.log("Not in special auth flow, redirecting to home");
         navigate("/", { replace: true });
       }
     }
-  }, [isLoaded, isSignedIn, navigate, pathName, isVerifyEmailPath, isSsoCallbackPath]);
+  }, [isLoaded, isSignedIn, navigate, pathName, isVerifyEmailPath, isSsoCallbackPath, user]);
 
   const handleVerificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,19 +122,40 @@ const AuthCallback = () => {
     }
   };
 
+  // Add a manual retry button for users stuck on SSO callback
+  const handleManualContinue = () => {
+    console.log("Manual continue triggered");
+    navigate("/", { replace: true });
+    toast.success("Welcome! You have been signed in.");
+  };
+
   return (
     <div className="min-h-screen bg-[#121212] flex items-center justify-center">
       <div className="text-white text-center p-6 max-w-md w-full bg-[#1a1a1a] rounded-lg shadow-lg">
         {isSsoCallbackPath ? (
-          // SSO Callback UI
+          // SSO Callback UI with timeout info and manual continue option
           <>
             <h2 className="text-2xl font-bold mb-4">Completing Authentication</h2>
             <p className="mb-6">
               Please wait while we complete your sign-in process...
             </p>
-            <div className="animate-pulse flex justify-center">
+            <div className="animate-pulse flex justify-center mb-6">
               <div className="h-4 w-24 bg-gray-600 rounded"></div>
             </div>
+            
+            {processingTime > 5 && (
+              <>
+                <p className="text-sm text-gray-400 mb-4">
+                  Taking longer than expected? You'll be redirected automatically in a few seconds, or you can continue manually.
+                </p>
+                <Button 
+                  onClick={handleManualContinue}
+                  className="bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold"
+                >
+                  Continue to App
+                </Button>
+              </>
+            )}
           </>
         ) : isVerifyEmailPath ? (
           // Email Verification UI

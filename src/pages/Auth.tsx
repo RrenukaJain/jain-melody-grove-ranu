@@ -47,6 +47,9 @@ const Auth = () => {
     setActiveTab(value);
   };
 
+  console.log("Auth page - current path:", from);
+  console.log("Auth page - song ID:", songId);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#121212] p-4">
       <Card className="w-full max-w-md bg-[#1a1a1a] border-none text-white">
