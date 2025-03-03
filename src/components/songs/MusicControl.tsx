@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { PlaybackControls } from "./PlaybackControls";
 import { ProgressBar } from "./ProgressBar";
 import { VolumeControl } from "./VolumeControl";
-import { SongDrawer } from "./SongDrawer";
+import { SongDrawer2 } from "./SongDrawer";
 import { SongInfo } from "./music-controls/SongInfo";
 import { DrawerToggle } from "./music-controls/DrawerToggle";
 import { ErrorMessage } from "./music-controls/ErrorMessage";
@@ -258,8 +259,8 @@ export const MusicControl = ({
         </div>
       </div>
 
-      {/* Drawer for expanded song details */}
-      <SongDrawer
+      {/* Drawer for expanded song details - Updated to use SongDrawer2 */}
+      <SongDrawer2
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         currentSong={currentSong}

@@ -77,7 +77,7 @@ const Collection = () => {
         </Tabs>
       </main>
 
-      {/* Music Control - always visible when playing */}
+      {/* Music Control - always visible when playing - Fix audio prop */}
       {(isPlaying || currentlyPlaying) && currentSongData && (
         <div className="fixed bottom-0 left-0 right-0 z-50">
           <MusicControl
