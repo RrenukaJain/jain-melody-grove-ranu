@@ -62,10 +62,11 @@ const Auth = () => {
                 routing="path" 
                 path="/auth" 
                 signUpUrl="/auth?tab=register"
-                // Update to use the new redirect URL props
                 afterSignInUrl={from}
-                redirectUrl={from}
-                fallbackRedirectUrl="/auth/callback"
+                redirectUrl="/auth/callback"
+                // Set specifically for SSO callbacks
+                afterSocialSignInUrl="/"
+                socialButtonsPlacement="bottom"
                 appearance={{
                   elements: {
                     rootBox: "w-full",
@@ -97,9 +98,10 @@ const Auth = () => {
                 routing="path" 
                 path="/auth" 
                 signInUrl="/auth?tab=login"
-                // Update to use the new redirect URL props
                 redirectUrl="/auth/callback"
-                fallbackRedirectUrl="/auth/callback"
+                // Set specifically for SSO callbacks
+                afterSocialSignUpUrl="/"
+                socialButtonsPlacement="bottom"
                 appearance={{
                   elements: {
                     rootBox: "w-full",

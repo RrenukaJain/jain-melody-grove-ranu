@@ -15,10 +15,12 @@ export function ClerkProvider({ children }: { children: ReactNode }) {
   return (
     <ClerkProviderOriginal 
       publishableKey={publishableKey}
-      // Use the correct property names for redirects
-      signInFallbackRedirectUrl="/auth/callback"
+      // Update configuration for proper SSO handling
       signInUrl="/auth?tab=login"
       signUpUrl="/auth?tab=register"
+      afterSignInUrl="/"
+      afterSignUpUrl="/"
+      signInFallbackUrl="/auth/callback"
     >
       {children}
     </ClerkProviderOriginal>

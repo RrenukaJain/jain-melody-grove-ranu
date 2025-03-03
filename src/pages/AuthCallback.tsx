@@ -15,10 +15,11 @@ const AuthCallback = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   
-  // Handle different paths including /auth/verify-email-address
+  // Handle different paths
   const pathName = location.pathname;
   const isVerifyEmailPath = pathName.includes('verify-email-address');
-
+  const isSsoCallbackPath = pathName.includes('sso-callback');
+  
   // Extract email from URL params if present
   const searchParams = new URLSearchParams(location.search);
   const email = searchParams.get('email') || "";
@@ -26,28 +27,35 @@ const AuthCallback = () => {
   useEffect(() => {
     console.log("Auth callback path:", pathName);
     console.log("Is verify email path:", isVerifyEmailPath);
+    console.log("Is SSO callback path:", isSsoCallbackPath);
     
     if (isLoaded) {
+      // Handle SSO callback
+      if (isSsoCallbackPath) {
+        console.log("Handling SSO callback flow");
+        // The SSO callback is handled automatically by Clerk
+        // Just show a message and wait for the redirect
+        toast.success("Completing authentication...");
+        return;
+      }
+      
       // Handle email verification flow
       if (isVerifyEmailPath) {
         console.log("Handling email verification flow");
-        // This is the email verification flow, show appropriate message
         toast.success("Please check your email to complete verification");
-        // Don't redirect immediately for verification flow
         return;
       }
       
       // For normal auth callback
       if (isSignedIn) {
         toast.success("Successfully authenticated!");
-      }
-      
-      // Redirect to home page after authentication if not in verification flow
-      if (!isVerifyEmailPath) {
+        navigate("/", { replace: true });
+      } else if (!isVerifyEmailPath && !isSsoCallbackPath) {
+        // Only redirect for regular auth callbacks if not in verification or SSO flow
         navigate("/", { replace: true });
       }
     }
-  }, [isLoaded, isSignedIn, navigate, pathName, isVerifyEmailPath]);
+  }, [isLoaded, isSignedIn, navigate, pathName, isVerifyEmailPath, isSsoCallbackPath]);
 
   const handleVerificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,18 +70,17 @@ const AuthCallback = () => {
       setError("");
 
       // Check if we have pending verification
-      if (!client.signUp.status || client.signUp.status === "complete") {
-        // Try to get the attempt from the email verification process
+      if (client && client.signUp && client.signUp.status !== "complete") {
+        // Complete the signup process with the verification code
         await client.signUp.attemptEmailAddressVerification({ code: verificationCode });
         console.log("Email verification successful");
         
-        toast.success("Email verified successfully!");
-        navigate("/", { replace: true });
-      } else {
-        // Complete the signup process with the verification code
-        await client.signUp.attemptEmailAddressVerification({ code: verificationCode });
         toast.success("Email verified and registration complete!");
         navigate("/", { replace: true });
+      } else {
+        console.log("No active sign-up session found");
+        setError("Invalid or expired verification code. Please try signing up again.");
+        toast.error("Invalid or expired verification code.");
       }
     } catch (err: any) {
       console.error("Verification error:", err);
@@ -87,14 +94,21 @@ const AuthCallback = () => {
   return (
     <div className="min-h-screen bg-[#121212] flex items-center justify-center">
       <div className="text-white text-center p-6 max-w-md w-full bg-[#1a1a1a] rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-4">
-          {isVerifyEmailPath 
-            ? "Email Verification Required" 
-            : "Finalizing authentication..."}
-        </h2>
-        
-        {isVerifyEmailPath ? (
+        {isSsoCallbackPath ? (
+          // SSO Callback UI
           <>
+            <h2 className="text-2xl font-bold mb-4">Completing Authentication</h2>
+            <p className="mb-6">
+              Please wait while we complete your sign-in process...
+            </p>
+            <div className="animate-pulse flex justify-center">
+              <div className="h-4 w-24 bg-gray-600 rounded"></div>
+            </div>
+          </>
+        ) : isVerifyEmailPath ? (
+          // Email Verification UI
+          <>
+            <h2 className="text-2xl font-bold mb-4">Email Verification Required</h2>
             <p className="mb-6">
               Please check your inbox and enter the verification code we sent to your email.
             </p>
@@ -128,9 +142,13 @@ const AuthCallback = () => {
             </div>
           </>
         ) : (
-          <p>
-            Please wait while we complete your sign-in process.
-          </p>
+          // Default Callback UI
+          <>
+            <h2 className="text-2xl font-bold mb-4">Finalizing authentication...</h2>
+            <p>
+              Please wait while we complete your sign-in process.
+            </p>
+          </>
         )}
       </div>
     </div>

@@ -26,6 +26,8 @@ function App() {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/auth/verify-email-address" element={<AuthCallback />} />
+                {/* Add SSO callback route */}
+                <Route path="/auth/sso-callback" element={<AuthCallback />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Toaster />

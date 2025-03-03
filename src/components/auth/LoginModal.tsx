@@ -31,8 +31,11 @@ const LoginModal = ({ onClose, songId }: LoginModalProps) => {
           routing="path" 
           path="/auth" 
           signUpUrl="/auth?tab=register"
-          fallbackRedirectUrl={window.location.pathname}
-          forceRedirectUrl={window.location.pathname}
+          afterSignInUrl={window.location.pathname}
+          redirectUrl="/auth/callback"
+          // Add SSO specific handling
+          afterSocialSignInUrl={window.location.pathname}
+          socialButtonsPlacement="bottom"
           appearance={{
             elements: {
               rootBox: "w-full",
