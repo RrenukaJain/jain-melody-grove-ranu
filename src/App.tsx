@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ClerkProvider } from '@/providers/ClerkProvider';
+import { ClerkProvider } from '@clerk/clerk-react';
 import { AuthProvider } from './context/AuthContext';
 import { ReactQueryProvider } from './context/ReactQueryContext';
 import Home from './pages/Home';
@@ -14,13 +14,16 @@ import { MusicPlayerProvider } from './components/songs/context/MusicPlayerConte
 import Playlists from "./pages/Playlists";
 import { PlaylistsProvider } from "./components/playlists/context/PlaylistsContext";
 
+// We need to provide publishableKey to ClerkProvider
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_YWRtaXJlZC1mdXNpbGllci00Mi5jbGVyay5hY2NvdW50cy5kZXYk';
+
 function App() {
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
       <AuthProvider>
         <ReactQueryProvider>
-          <PlaylistsProvider>
-            <MusicPlayerProvider>
+          <MusicPlayerProvider>
+            <PlaylistsProvider>
               <div className="min-h-screen bg-[#121212] text-white">
                 <BrowserRouter>
                   <Toaster richColors />
@@ -34,8 +37,8 @@ function App() {
                   </Routes>
                 </BrowserRouter>
               </div>
-            </MusicPlayerProvider>
-          </PlaylistsProvider>
+            </PlaylistsProvider>
+          </MusicPlayerProvider>
         </ReactQueryProvider>
       </AuthProvider>
     </ClerkProvider>

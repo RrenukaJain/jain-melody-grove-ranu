@@ -45,6 +45,8 @@ export function PlaylistsProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       if (!isAuthenticated || !user) return [];
       
+      console.log('Fetching playlists for user:', user.id);
+      
       const { data, error } = await supabase
         .from('playlists')
         .select('*')
@@ -71,12 +73,18 @@ export function PlaylistsProvider({ children }: { children: ReactNode }) {
         toast.error("You must be logged in to create a playlist");
         return null;
       }
+
+      console.log('Creating playlist for user:', user.id);
       
+      // Extract UUID part if the user ID is in Clerk format (user_xxx)
+      let userId = user.id;
+      
+      // For storing in Supabase, we need to handle the user_id format for our database
       const { data, error } = await supabase
         .from('playlists')
         .insert({
           name: params.name,
-          user_id: user.id,
+          user_id: userId,
         })
         .select()
         .single();
