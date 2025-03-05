@@ -1,4 +1,3 @@
-
 import { Song } from "../songs/types";
 
 export interface Playlist {

@@ -1,7 +1,7 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Playlist, PlaylistWithSongs, Song } from "../types";
+import { Playlist, PlaylistWithSongs } from "../types";
+import { Song } from "../../songs/types";
 import { toast } from "sonner";
 
 // Query hook for fetching user playlists
