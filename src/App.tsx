@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ClerkProvider } from '@clerk/clerk-react';
+import { ClerkProvider } from '@/providers/ClerkProvider';
 import { AuthProvider } from './context/AuthContext';
 import { ReactQueryProvider } from './context/ReactQueryContext';
 import Home from './pages/Home';
@@ -14,12 +14,9 @@ import { MusicPlayerProvider } from './components/songs/context/MusicPlayerConte
 import Playlists from "./pages/Playlists";
 import { PlaylistsProvider } from "./components/playlists/context/PlaylistsContext";
 
-// Get publishable key from environment variable
-const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder';
-
 function App() {
   return (
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider>
       <AuthProvider>
         <ReactQueryProvider>
           <PlaylistsProvider>
