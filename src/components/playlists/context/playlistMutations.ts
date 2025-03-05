@@ -11,12 +11,15 @@ import {
   ReorderPlaylistSongParams
 } from "./playlistsContextTypes";
 
-// Helper to extract UUID from Clerk user ID
-const extractUuid = (clerkId: string): string => {
-  // If the ID starts with "user_", remove that prefix
+// Helper to handle Clerk user ID format
+const extractClerkUserId = (clerkId: string | undefined): string | null => {
+  if (!clerkId) return null;
+  
+  // Clerk IDs typically start with "user_" - we need to remove this prefix
   if (clerkId.startsWith('user_')) {
     return clerkId.substring(5);
   }
+  
   return clerkId;
 };
 
@@ -31,10 +34,17 @@ export const useCreatePlaylistMutation = (userId: string | undefined) => {
         return null;
       }
 
-      console.log('Creating playlist for user:', userId);
+      console.log('Creating playlist for user ID:', userId);
       
-      // Extract or use the user ID directly based on format
-      const cleanUserId = extractUuid(userId);
+      // Extract the clean user ID
+      const cleanUserId = extractClerkUserId(userId);
+      
+      if (!cleanUserId) {
+        toast.error("Invalid user ID");
+        return null;
+      }
+      
+      console.log('Using extracted user ID:', cleanUserId);
       
       const { data, error } = await supabase
         .from('playlists')
