@@ -21,8 +21,8 @@ function App() {
     <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
       <AuthProvider>
         <ReactQueryProvider>
-          <MusicPlayerProvider>
-            <PlaylistsProvider>
+          <PlaylistsProvider>
+            <MusicPlayerProvider>
               <div className="min-h-screen bg-[#121212] text-white">
                 <BrowserRouter>
                   <Toaster richColors />
@@ -36,8 +36,8 @@ function App() {
                   </Routes>
                 </BrowserRouter>
               </div>
-            </PlaylistsProvider>
-          </MusicPlayerProvider>
+            </MusicPlayerProvider>
+          </PlaylistsProvider>
         </ReactQueryProvider>
       </AuthProvider>
     </ClerkProvider>
