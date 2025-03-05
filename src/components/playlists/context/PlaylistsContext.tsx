@@ -27,7 +27,7 @@ import {
   useAddSongToPlaylistMutation,
   useRemoveSongFromPlaylistMutation,
   useReorderPlaylistSongMutation
-} from "./playlistMutations";
+} from "./mutations";
 
 const PlaylistsContext = createContext<PlaylistsContextType | undefined>(undefined);
 
