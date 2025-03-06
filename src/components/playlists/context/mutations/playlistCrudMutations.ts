@@ -1,6 +1,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { toast } from "sonner";
 import { Playlist } from "../../types";
 import { 
@@ -14,6 +14,8 @@ import { extractClerkUserId } from "../utils/userIdHelper";
  */
 export const useCreatePlaylistMutation = (userId: string | undefined) => {
   const queryClient = useQueryClient();
+  
+  const supabaseClient = useSupabaseAuth();
   
   return useMutation({
     mutationFn: async (params: CreatePlaylistParams): Promise<Playlist | null> => {
@@ -33,8 +35,9 @@ export const useCreatePlaylistMutation = (userId: string | undefined) => {
       }
       
       console.log('Using extracted user ID:', cleanUserId);
+      console.log('This ID should be deterministic and consistent across calls');
       
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('playlists')
         .insert({
           name: params.name,
@@ -48,6 +51,7 @@ export const useCreatePlaylistMutation = (userId: string | undefined) => {
         throw error;
       }
       
+      console.log('Playlist created successfully:', data);
       return data as Playlist;
     },
     onSuccess: () => {
@@ -65,10 +69,11 @@ export const useCreatePlaylistMutation = (userId: string | undefined) => {
  */
 export const useUpdatePlaylistMutation = () => {
   const queryClient = useQueryClient();
+  const supabaseClient = useSupabaseAuth();
   
   return useMutation({
     mutationFn: async ({ id, params }: { id: string, params: UpdatePlaylistParams }): Promise<Playlist | null> => {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('playlists')
         .update(params)
         .eq('id', id)
@@ -98,10 +103,11 @@ export const useUpdatePlaylistMutation = () => {
  */
 export const useDeletePlaylistMutation = () => {
   const queryClient = useQueryClient();
+  const supabaseClient = useSupabaseAuth();
   
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('playlists')
         .delete()
         .eq('id', id);
