@@ -47,44 +47,108 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
   const [allSongs, setAllSongs] = useState<Song[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [currentPlaylist, setCurrentPlaylist] = useState<Song[]>([]);
+  
+  // Create audio element if it doesn't exist
+  useEffect(() => {
+    if (!audioRef.current) {
+      const audioElement = new Audio();
+      audioElement.preload = "auto";
+      audioRef.current = audioElement;
+      console.log("Audio element created:", audioElement);
+    }
+  }, []);
 
   // Get the active playlist from context if available
   const { activePlaylistId, playlistDetails } = usePlaylists ? usePlaylists() : { activePlaylistId: null, playlistDetails: {} };
 
   // Function to play a song
   const playSong = (songId: string, fileUrl: string, index: number, songs: Song[]) => {
-    if (audioRef.current) {
-      // If the song is already playing, pause it
-      if (currentlyPlaying === songId && isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-        return;
+    console.log("Attempting to play song:", { songId, fileUrl, index });
+    
+    if (!audioRef.current) {
+      console.error("Audio reference is not available");
+      toast.error("Audio player is not initialized");
+      return;
+    }
+    
+    // If the song is already playing, pause it
+    if (currentlyPlaying === songId && isPlaying) {
+      console.log("Pausing currently playing song");
+      audioRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
+    
+    // If the song is the same but is not playing, then play it
+    if (currentlyPlaying === songId && !isPlaying) {
+      console.log("Resuming paused song");
+      audioRef.current.play().then(() => {
+        console.log("Song resumed successfully");
+        setIsPlaying(true);
+      }).catch(error => {
+        console.error("Error resuming audio:", error);
+        toast.error("Failed to resume the song");
+      });
+      return;
+    }
+
+    // Set loading state while the song is loading
+    setIsLoadingSong(true);
+    
+    try {
+      // Validate the file URL
+      if (!fileUrl) {
+        throw new Error("Song URL is missing");
       }
       
-      // If the song is the same but is not playing, then play it
-      if (currentlyPlaying === songId && !isPlaying) {
-        audioRef.current.play();
-        setIsPlaying(true);
-        return;
-      }
-
-      // Set loading state while the song is loading
-      setIsLoadingSong(true);
-
-      // Set the new song and play it
-      audioRef.current.src = fileUrl;
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-        setIsLoadingSong(false);
-        setCurrentlyPlaying(songId);
-        setCurrentSongData(songs[index]);
-        setCurrentPlaylist(songs);
-      }).catch(error => {
-        console.error("Error playing audio:", error);
-        setIsLoadingSong(false);
-        setIsPlaying(false);
-        toast.error("Failed to play the song.");
-      });
+      console.log("Loading new song with URL:", fileUrl);
+      
+      // Create a test request to check if the file is accessible
+      fetch(fileUrl, { method: 'HEAD' })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`File not accessible: ${response.status} ${response.statusText}`);
+          }
+          console.log("File is accessible, setting audio source");
+          
+          // Set the new song and play it
+          audioRef.current.src = fileUrl;
+          
+          // Add event listeners for debugging
+          const onLoadStart = () => console.log("Audio load started");
+          const onLoadedData = () => console.log("Audio data loaded");
+          const onCanPlay = () => console.log("Audio can play");
+          
+          audioRef.current.addEventListener('loadstart', onLoadStart);
+          audioRef.current.addEventListener('loadeddata', onLoadedData);
+          audioRef.current.addEventListener('canplay', onCanPlay);
+          
+          // Attempt to play the audio
+          return audioRef.current.play().then(() => {
+            // Clean up event listeners
+            audioRef.current.removeEventListener('loadstart', onLoadStart);
+            audioRef.current.removeEventListener('loadeddata', onLoadedData);
+            audioRef.current.removeEventListener('canplay', onCanPlay);
+            
+            console.log("Song started playing successfully");
+            setIsPlaying(true);
+            setIsLoadingSong(false);
+            setCurrentlyPlaying(songId);
+            setCurrentSongData(songs[index]);
+            setCurrentPlaylist(songs);
+          });
+        })
+        .catch(error => {
+          console.error("Error accessing audio file:", error);
+          setIsLoadingSong(false);
+          setIsPlaying(false);
+          toast.error(`Failed to access the song: ${error.message}`);
+        });
+    } catch (error) {
+      console.error("Error setting up audio playback:", error);
+      setIsLoadingSong(false);
+      setIsPlaying(false);
+      toast.error(`Playback error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

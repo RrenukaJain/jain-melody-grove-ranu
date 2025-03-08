@@ -1,7 +1,7 @@
 
 import { useImperativeHandle, forwardRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { SongCard } from "./SongCard";
 import { Song } from "./types";
 import { useSongFilters } from "./hooks/useSongFilters";
@@ -28,11 +28,14 @@ export const Songs = forwardRef<
   },
   SongsProps
 >(({ searchQuery = "", categoryFilter = null, featured = false }, ref) => {
+  // Get Supabase client
+  const supabaseClient = useSupabaseAuth();
+  
   // Fetch songs from supabase
   const { data: songs = [], isLoading } = useQuery({
     queryKey: ['songs', { featured, categoryFilter }],
     queryFn: async () => {
-      let query = supabase
+      let query = supabaseClient
         .from('songs')
         .select('*');
 
@@ -49,6 +52,7 @@ export const Songs = forwardRef<
       const { data, error } = await query
       
       if (error) throw error;
+      console.log("Fetched songs:", data);
       return data as Song[];
     },
   });
