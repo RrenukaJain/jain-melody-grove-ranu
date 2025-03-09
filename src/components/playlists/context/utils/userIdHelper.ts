@@ -1,21 +1,4 @@
 
-/**
- * Helper function to extract the clean user ID from Clerk's user ID format.
- * Clerk IDs typically start with "user_" prefix which needs to be removed
- * before using with Supabase.
- */
-// export const extractClerkUserId = (clerkId: string | undefined): string | null => {
-//   if (!clerkId) return null;
-  
-//   // Clerk IDs typically start with "user_" - we need to remove this prefix
-//   if (clerkId.startsWith('user_')) {
-//     return clerkId.substring(5);
-//   }
-  
-//   return clerkId;
-// };
-
-// -----------
 import { v5 as uuidv5 } from 'uuid';
 
 /**
@@ -24,14 +7,34 @@ import { v5 as uuidv5 } from 'uuid';
  * deterministic UUID based on the Clerk ID.
  */
 export const extractClerkUserId = (clerkId: string | undefined): string | null => {
-  if (!clerkId) return null;
+  if (!clerkId) {
+    console.error('extractClerkUserId: No user ID provided');
+    return null;
+  }
+  
+  console.log('extractClerkUserId: Original Clerk ID:', clerkId);
   
   // Remove the "user_" prefix if it exists
   const cleanId = clerkId.startsWith('user_') ? clerkId.substring(5) : clerkId;
+  console.log('extractClerkUserId: Cleaned ID (without prefix):', cleanId);
   
-  // Generate a deterministic UUID based on the Clerk ID
-  // This ensures the same Clerk ID always maps to the same UUID
-  return generateDeterministicUuid(cleanId);
+  try {
+    // Generate a deterministic UUID based on the Clerk ID
+    // This ensures the same Clerk ID always maps to the same UUID
+    const uuid = generateDeterministicUuid(cleanId);
+    console.log('extractClerkUserId: Generated UUID:', uuid);
+    
+    // Validate that the generated string is a valid UUID
+    if (!isValidUuid(uuid)) {
+      console.error('extractClerkUserId: Generated an invalid UUID:', uuid);
+      return null;
+    }
+    
+    return uuid;
+  } catch (error) {
+    console.error('extractClerkUserId: Error generating UUID:', error);
+    return null;
+  }
 };
 
 /**
@@ -44,4 +47,13 @@ function generateDeterministicUuid(input: string): string {
   
   // Generate a deterministic UUID using the input and namespace
   return uuidv5(input, NAMESPACE);
+}
+
+/**
+ * Validates that a string is a properly formatted UUID.
+ * UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx where x is a hexadecimal digit.
+ */
+function isValidUuid(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
 }

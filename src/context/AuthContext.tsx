@@ -31,16 +31,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fetchSupabaseToken = async () => {
       if (user) {
         try {
+          console.log("Fetching Supabase token for user:", user.id);
+          
           // Get the JWT for Supabase from Clerk
           // Note: You'll need to create a "supabase" template in Clerk dashboard
           const token = await getToken({ template: "supabase" });
-          console.log("Fetched Supabase token:", token ? "Token received" : "No token");
+          
+          if (token) {
+            console.log("Supabase token received successfully");
+            // Log the first 10 characters of the token for debugging
+            console.log("Token preview:", token.substring(0, 10) + "...");
+            
+            // Parse the token to check its contents (JWT is base64 encoded)
+            try {
+              const tokenParts = token.split('.');
+              if (tokenParts.length === 3) {
+                const payload = JSON.parse(atob(tokenParts[1]));
+                console.log("Token payload:", payload);
+                
+                // Check if the token has the expected claims
+                if (!payload.aud) console.warn("Token missing 'aud' claim");
+                if (!payload.role) console.warn("Token missing 'role' claim");
+                if (!payload.user_id) console.warn("Token missing 'user_id' claim");
+              }
+            } catch (parseError) {
+              console.error("Error parsing JWT token:", parseError);
+            }
+          } else {
+            console.error("No token received from Clerk");
+          }
+          
           setSupabaseAccessToken(token);
         } catch (error) {
           console.error("Failed to get Supabase token:", error);
           setSupabaseAccessToken(null);
         }
       } else {
+        console.log("No user logged in, clearing Supabase token");
         setSupabaseAccessToken(null);
       }
     };

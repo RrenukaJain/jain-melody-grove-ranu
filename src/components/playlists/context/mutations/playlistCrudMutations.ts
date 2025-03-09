@@ -27,7 +27,14 @@ export const useCreatePlaylistMutation = (userId: string | undefined) => {
       console.log('Creating playlist for user ID:', userId);
       
       // Extract the clean user ID
-      const cleanUserId = extractClerkUserId(userId);
+      console.log('About to convert user ID:', userId);
+      console.log('Type of userId:', typeof userId);
+      
+      // Force the userId to be a string
+      const userIdString = String(userId);
+      console.log('Forced to string:', userIdString);
+      
+      const cleanUserId = extractClerkUserId(userIdString);
       
       if (!cleanUserId) {
         toast.error("Invalid user ID");
@@ -36,23 +43,41 @@ export const useCreatePlaylistMutation = (userId: string | undefined) => {
       
       console.log('Using extracted user ID:', cleanUserId);
       console.log('This ID should be deterministic and consistent across calls');
+      console.log('Is this a valid UUID?', /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanUserId));
       
-      const { data, error } = await supabaseClient
-        .from('playlists')
-        .insert({
-          name: params.name,
-          user_id: cleanUserId,
-        })
-        .select()
-        .single();
+      // Check if we have an authenticated client
+      const authHeader = (supabaseClient as any)?.headers?.Authorization;
+      console.log('Auth header present:', !!authHeader);
+      
+      try {
+        console.log('Inserting playlist with name:', params.name);
         
-      if (error) {
-        console.error('Error creating playlist:', error);
+        const { data, error } = await supabaseClient
+          .from('playlists')
+          .insert({
+            name: params.name,
+            user_id: cleanUserId,
+          })
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Error creating playlist:', error);
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          throw error;
+        }
+        
+        console.log('Playlist created successfully:', data);
+        return data as Playlist;
+      } catch (error: any) {
+        console.error('Exception creating playlist:', error);
         throw error;
       }
-      
-      console.log('Playlist created successfully:', data);
-      return data as Playlist;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
